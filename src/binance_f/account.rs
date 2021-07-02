@@ -6,7 +6,7 @@ use crate::binance_f::client::Client;
 use crate::binance_f::api::{API, Futures};
 use crate::binance_f::rest_model::Empty;
 // use crate::account::{OrderSide, TimeInForce};
-use crate::binance_f::rest_model::{ChangeLeverageResponse, Transaction, CanceledOrder, Position, AccountBalance};
+use crate::binance_f::rest_model::{ChangeLeverageResponse, PositionModeResponse, Transaction, CanceledOrder, Position, AccountBalance};
 
 pub enum OrderSide {
     Buy,
@@ -338,6 +338,21 @@ impl FuturesAccount {
         self.client
             .post_signed::<Empty>(API::Futures(Futures::PositionSide), request)
             .map(|_| ())
+    }
+
+    pub fn get_position_mode(&self) -> Result<PositionModeResponse> {
+        let mut parameters: BTreeMap<String, String> = BTreeMap::new();
+        
+        let request = build_signed_request(parameters, self.recv_window)?;
+        self.client
+            .get_signed(API::Futures(Futures::PositionSide), Some(request))
+    }
+
+    pub fn change_multi_assets_mode(&self, mutl_assets_margin: S) -> Result<()> 
+    where 
+        S: Into<String>
+    {
+        
     }
 
     pub fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<()> where S: Into<String> {

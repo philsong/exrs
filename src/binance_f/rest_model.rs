@@ -589,6 +589,12 @@ pub struct ChangeLeverageResponse {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct PositionModeResponse {
+    pub dual_side_position: bool
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub client_order_id: String,
     #[serde(with = "string_or_float")]
