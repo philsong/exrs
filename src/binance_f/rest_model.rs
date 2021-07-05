@@ -576,7 +576,6 @@ pub struct BaseAsset {
     pub weight_in_percentage: Decimal,
 }
 
-
 // Account models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -590,7 +589,13 @@ pub struct ChangeLeverageResponse {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PositionModeResponse {
-    pub dual_side_position: bool
+    pub dual_side_position: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MultiAssetsMarginResponse {
+    pub multi_assets_margin: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -711,7 +716,22 @@ pub struct AccountBalance {
     pub max_withdraw_amount: f64,
     pub margin_available: bool,
     pub update_time: u64,
+}
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TradeHistory {
+    pub id: u64,
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+    #[serde(with = "string_or_float")]
+    pub qty: f64,
+    pub commission: String,
+    pub commission_asset: String,
+    pub time: u64,
+    pub is_buyer: bool,
+    pub is_maker: bool,
+    pub is_best_match: bool,
 }
 
 

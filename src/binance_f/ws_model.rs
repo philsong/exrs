@@ -1,10 +1,8 @@
-use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Clone)]
 pub struct Empty {}
-
-
 
 /// The Aggregate Trade Streams push trade information that is aggregated for a single taker order.
 ///
@@ -72,7 +70,7 @@ pub struct MarkPriceEvent {
     pub funding_rate: Decimal,
 
     #[serde(rename = "T")]
-    pub next_funding_time: u64
+    pub next_funding_time: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -86,7 +84,7 @@ pub enum MarkPricesEvent {
 pub struct Kline {
     #[serde(rename = "e")]
     pub event_type: String,
-    
+
     #[serde(rename = "E")]
     pub event_time: u64,
 
@@ -127,7 +125,7 @@ pub struct Kline {
     pub taker_buy_quote_asset_volume: Decimal,
 
     #[serde(rename = "B", skip_serializing)]
-    pub ignore: Decimal
+    pub ignore: Decimal,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -143,7 +141,7 @@ pub struct KlineEvent {
     pub symbol: String,
 
     #[serde(rename = "k")]
-    pub kline: Kline
+    pub kline: Kline,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -151,7 +149,7 @@ pub struct KlineEvent {
 pub struct ContinuousKline {
     #[serde(rename = "t")]
     pub kline_start_time: u64,
-    
+
     #[serde(rename = "T")]
     pub kline_close_time: u64,
 
@@ -195,7 +193,7 @@ pub struct ContinuousKline {
     pub taker_buy_quote_asset_volume: Decimal,
 
     #[serde(rename = "B", skip_serializing)]
-    pub ignore: Decimal
+    pub ignore: Decimal,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -254,13 +252,13 @@ pub struct MiniTickerEvent {
     pub total_traded_base_asset_volume: Decimal,
 
     #[serde(rename = "q")]
-    pub total_traded_quote_asset_volume: Decimal
+    pub total_traded_quote_asset_volume: Decimal,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum AllMiniTickerEvent {
-    AllMiniTickerEvent(Vec<MiniTickerEvent>)
+    AllMiniTickerEvent(Vec<MiniTickerEvent>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -324,7 +322,7 @@ pub struct DayTickerEvent {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum AllDayTickerEvent {
-    AllDayTickerEvent(Vec<DayTickerEvent>)
+    AllDayTickerEvent(Vec<DayTickerEvent>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -361,7 +359,7 @@ pub struct BookTickerEvent {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum AllBookTickerEvent {
-    AllBookTickerEvent(Vec<BookTickerEvent>)
+    AllBookTickerEvent(Vec<BookTickerEvent>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -398,7 +396,7 @@ pub struct LiquidationOrder {
     pub order_last_filled_accumulated_qty: Decimal,
 
     #[serde(rename = "T")]
-    pub order_trade_time: u64
+    pub order_trade_time: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -411,7 +409,7 @@ pub struct LiquidationOrderEvent {
     pub event_time: u64,
 
     #[serde(rename = "o")]
-    pub liquidation_order: Vec<LiquidationOrder>
+    pub liquidation_order: Vec<LiquidationOrder>,
 }
 
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
@@ -422,10 +420,7 @@ pub struct Bids {
 
 impl Bids {
     pub fn new(price: Decimal, qty: Decimal) -> Bids {
-        Bids { 
-            price, 
-            qty,
-        }
+        Bids { price, qty }
     }
 }
 
@@ -437,10 +432,7 @@ pub struct Asks {
 
 impl Asks {
     pub fn new(price: Decimal, qty: Decimal) -> Asks {
-        Asks { 
-            price, 
-            qty,
-        }
+        Asks { price, qty }
     }
 }
 
@@ -488,7 +480,7 @@ pub struct Busket {
 pub struct BLVTInfoEvent {
     #[serde(rename = "e")]
     pub event_type: String,
-    
+
     #[serde(rename = "E")]
     pub event_time: u64,
 
@@ -511,7 +503,7 @@ pub struct BLVTInfoEvent {
     pub traget_leverage: Decimal,
 
     #[serde(rename = "f")]
-    pub funding_rate: Decimal
+    pub funding_rate: Decimal,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -519,7 +511,7 @@ pub struct BLVTInfoEvent {
 pub struct BLVTNAVKline {
     #[serde(rename = "t")]
     pub kline_start_time: u64,
-    
+
     #[serde(rename = "T")]
     pub kline_close_time: u64,
 
@@ -566,14 +558,14 @@ pub struct BLVTNAVKline {
     pub taker_buy_quote_asset_volume: Decimal,
 
     #[serde(rename = "B", skip_serializing)]
-    pub ignore: Decimal
+    pub ignore: Decimal,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct BLVTNAVKlineEvent {
     #[serde(rename = "e")]
-    pub event_type: String,    
+    pub event_type: String,
 
     #[serde(rename = "E")]
     pub event_time: u64,
@@ -582,7 +574,7 @@ pub struct BLVTNAVKlineEvent {
     pub blvt_name: String,
 
     #[serde(rename = "k")]
-    pub BLVTKline: BLVTNAVKline,
+    pub blvt_kline: BLVTNAVKline,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -601,14 +593,14 @@ pub struct Composition {
     pub weight_in_percentage: Decimal,
 
     #[serde(rename = "i")]
-    pub index_price: Decimal
+    pub index_price: Decimal,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CompositeIndexEvent {
     #[serde(rename = "e")]
-    pub event_type: String,    
+    pub event_type: String,
 
     #[serde(rename = "E")]
     pub event_time: u64,
@@ -620,10 +612,8 @@ pub struct CompositeIndexEvent {
     pub price: Decimal,
 
     #[serde(rename = "c")]
-    pub compositions: Vec<Composition>
+    pub compositions: Vec<Composition>,
 }
-
-
 
 pub(crate) mod string_or_float {
     use std::fmt;
