@@ -67,7 +67,6 @@ pub enum Futures {
     Ticker24hr,
     TickerPrice,
     BookTicker,
-    AllForceOrders,
     AllOpenOrders,
     Order,
     OrderTest,
@@ -85,6 +84,7 @@ pub enum Futures {
     LvtKlines,
     IndexInfo,
     ChangeInitialLeverage,
+    UserDataStream,
 }
 
 impl From<API> for String {
@@ -137,7 +137,6 @@ impl From<API> for String {
                 Futures::Ticker24hr => "/fapi/v1/ticker/24hr",
                 Futures::TickerPrice => "/fapi/v1/ticker/price",
                 Futures::BookTicker => "/fapi/v1/ticker/bookTicker",
-                Futures::AllForceOrders => "/fapi/v1/allForceOrders",
                 Futures::AllOpenOrders => "/fapi/v1/allOpenOrders",
                 Futures::PositionSide => "/fapi/v1/positionSide/dual",
                 Futures::MultiAssetsMargin => "/fapi/v1/multiAssetsMargin",
@@ -155,6 +154,7 @@ impl From<API> for String {
                 Futures::LvtKlines => "/fapi/v1/lvtKlines",
                 Futures::IndexInfo => "/fapi/v1/indexInfo",
                 Futures::ChangeInitialLeverage => "/fapi/v1/leverage",
+                Futures::UserDataStream => "/fapi/v1/listenKey",
             },
         })
     }

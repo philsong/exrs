@@ -598,11 +598,11 @@ pub struct MultiAssetsMarginResponse {
     pub multi_assets_margin: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Transaction {
+pub struct Order {
     pub client_order_id: String,
-    #[serde(with = "string_or_float")]
+    #[serde(with = "string_or_float", default = "default_stop_price")]
     pub cum_qty: f64,
     #[serde(with = "string_or_float")]
     pub cum_quote: f64,
@@ -613,27 +613,27 @@ pub struct Transaction {
     pub avg_price: f64,
     #[serde(with = "string_or_float")]
     pub orig_qty: f64,
-    pub reduce_only: bool,
+    #[serde(with = "string_or_float")]
+    pub price: f64,
     pub side: String,
+    pub reduce_only: bool,
     pub position_side: String,
     pub status: String,
-    #[serde(with = "string_or_float")]
+    #[serde(with = "string_or_float", default = "default_stop_price")]
     pub stop_price: f64,
     pub close_position: bool,
     pub symbol: String,
     pub time_in_force: String,
     #[serde(rename = "type")]
-    pub type_name: String,
+    pub order_type: String,
     pub orig_type: String,
-    #[serde(default)]
-    #[serde(with = "string_or_float_opt")]
-    pub activate_price: Option<f64>,
-    #[serde(default)]
-    #[serde(with = "string_or_float_opt")]
-    pub price_rate: Option<f64>,
+    #[serde(with = "string_or_float", default = "default_activation_price")]
+    pub activation_price: f64,
+    #[serde(with = "string_or_float", default = "default_price_rate")]
+    pub price_rate: f64,
     pub update_time: u64,
     pub working_type: String,
-    price_protect: bool,
+    pub price_protect: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -718,22 +718,15 @@ pub struct AccountBalance {
     pub update_time: u64,
 }
 
+// User Stream
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct TradeHistory {
-    pub id: u64,
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub qty: f64,
-    pub commission: String,
-    pub commission_asset: String,
-    pub time: u64,
-    pub is_buyer: bool,
-    pub is_maker: bool,
-    pub is_best_match: bool,
+pub struct UserDataStream {
+    pub listen_key: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Success {}
 
 pub(crate) mod string_or_float {
     use std::fmt;
@@ -834,4 +827,14 @@ pub(crate) mod string_or_bool {
             StringOrFloat::Bool(i) => Ok(i),
         }
     }
+}
+
+fn default_stop_price() -> f64 {
+    0.0
+}
+fn default_activation_price() -> f64 {
+    0.0
+}
+fn default_price_rate() -> f64 {
+    0.0
 }
