@@ -615,6 +615,83 @@ pub struct CompositeIndexEvent {
     pub compositions: Vec<Composition>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountUpdateEvent {
+    #[serde(rename = "e")]
+    pub event_type: String,
+
+    #[serde(rename = "E")]
+    pub event_time: u64,
+
+    #[serde(rename = "T")]
+    pub transaction_time: u64,
+
+    #[serde(rename = "a")]
+    pub data: AccountData,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountData {
+    #[serde(rename = "m")]
+    pub event_reason_type: String,
+
+    #[serde(rename = "B")]
+    pub balances: Vec<Balance>,
+
+    #[serde(rename = "P")]
+    pub positions: Vec<Position>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Balance {
+    #[serde(rename = "a")]
+    pub asset: String,
+
+    #[serde(rename = "wb")]
+    pub wallet_balance: Decimal,
+
+    #[serde(rename = "cw")]
+    pub cross_wallet_balance: Decimal,
+
+    #[serde(rename = "bc")]
+    pub balances_change: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Position {
+    #[serde(rename = "s")]
+    pub symbol: String,
+
+    #[serde(rename = "pa")]
+    pub position_amount: Decimal,
+
+    #[serde(rename = "ep")]
+    pub entry_price: Decimal,
+
+    #[serde(rename = "cr")]
+    pub accumulated_realized: Decimal,
+
+    #[serde(rename = "up")]
+    pub unrealized_pnl: Decimal,
+
+    #[serde(rename = "mt")]
+    pub margin_type: String,
+
+    #[serde(rename = "iw")]
+    pub isolated_wallet: Decimal,
+
+    #[serde(rename = "ps")]
+    pub position_side: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderTradeEvent {}
+
 pub(crate) mod string_or_float {
     use std::fmt;
 
