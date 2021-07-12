@@ -246,44 +246,44 @@ pub trait Binance {
 // //              Binance Futures API
 // // *****************************************************
 
-// impl Binance for FuturesGeneral {
-//     fn new(api_key: Option<String>, secret_key: Option<String>) -> FuturesGeneral {
-//         Self::new_with_config(api_key, secret_key, &Config::default())
-//     }
+impl Binance for FuturesGeneral {
+    fn new(api_key: Option<String>, secret_key: Option<String>) -> FuturesGeneral {
+        Self::new_with_config(api_key, secret_key, &Config::default())
+    }
 
-//     fn new_with_config(
-//         api_key: Option<String>, secret_key: Option<String>, config: &Config,
-//     ) -> FuturesGeneral {
-//         FuturesGeneral {
-//             client: Client::new(api_key, secret_key, config.futures_rest_api_endpoint.clone()),
-//         }
-//     }
-// }
+    fn new_with_config(
+        api_key: Option<String>, secret_key: Option<String>, config: &Config,
+    ) -> FuturesGeneral {
+        FuturesGeneral {
+            client: Client::new(api_key, secret_key, config.futures_rest_api_endpoint.clone()),
+        }
+    }
+}
 
-// impl Binance for FuturesMarket {
-//     fn new(api_key: Option<String>, secret_key: Option<String>) -> FuturesMarket {
-//         Self::new_with_config(api_key, secret_key, &Config::default())
-//     }
+impl Binance for FuturesMarket {
+    fn new(api_key: Option<String>, secret_key: Option<String>) -> FuturesMarket {
+        Self::new_with_config(api_key, secret_key, &Config::default())
+    }
 
-//     fn new_with_config(
-//         api_key: Option<String>, secret_key: Option<String>, config: &Config,
-//     ) -> FuturesMarket {
-//         FuturesMarket {
-//             client: Client::new(api_key, secret_key, config.futures_rest_api_endpoint.clone()),
-//             recv_window: config.recv_window,
-//         }
-//     }
-// }
+    fn new_with_config(
+        api_key: Option<String>, secret_key: Option<String>, config: &Config,
+    ) -> FuturesMarket {
+        FuturesMarket {
+            client: Client::new(api_key, secret_key, config.futures_rest_api_endpoint.clone()),
+            recv_window: config.recv_window,
+        }
+    }
+}
 
-// impl Binance for FuturesAccount {
-//     fn new(api_key: Option<String>, secret_key: Option<String>) -> Self {
-//         Self::new_with_config(api_key, secret_key, &Config::default())
-//     }
+impl Binance for FuturesAccount {
+    fn new(api_key: Option<String>, secret_key: Option<String>) -> Self {
+        Self::new_with_config(api_key, secret_key, &Config::default())
+    }
 
-//     fn new_with_config(api_key: Option<String>, secret_key: Option<String>, config: &Config) -> Self {
-//         Self {
-//             client: Client::new(api_key, secret_key, config.futures_rest_api_endpoint.clone()),
-//             recv_window: config.recv_window,
-//         }
-//     }
-// }
+    fn new_with_config(api_key: Option<String>, secret_key: Option<String>, config: &Config) -> Self {
+        Self {
+            client: Client::new(api_key, secret_key, config.futures_rest_api_endpoint.clone()),
+            recv_window: config.recv_window,
+        }
+    }
+}
