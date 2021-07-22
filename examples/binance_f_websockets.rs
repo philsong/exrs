@@ -113,7 +113,7 @@ fn last_price_for_one_symbol() {
 }
 
 fn multiple_streams() {
-    let symbols: Vec<_> = vec!["ethbtc", "bnbeth"].into_iter().map(String::from).collect();
+    let symbols: Vec<_> = vec!["ethusdt", "btcusdt"].into_iter().map(String::from).collect();
     let mut endpoints: Vec<String> = Vec::new();
 
     for symbol in symbols.iter() {
