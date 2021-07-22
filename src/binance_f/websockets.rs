@@ -20,9 +20,9 @@ enum WebsocketAPI {
 impl WebsocketAPI {
     fn params(self, subscription: &str) -> String {
         match self {
-            WebsocketAPI::Default => format!("wss://fstream.binance.com:9443/ws/{}", subscription),
+            WebsocketAPI::Default => format!("wss://fstream.binance.com/ws/{}", subscription),
             WebsocketAPI::MultiStream => format!(
-                "wss://fstream.binance.com:9443/stream?streams={}",
+                "wss://fstream.binance.com/stream?streams={}",
                 subscription
             ),
             WebsocketAPI::Custom(url) => url,
@@ -126,7 +126,6 @@ impl<'a> WebSockets<'a> {
                 Events::AggrTradesEvent(v) => WebsocketEvent::AggrTrades(v),
                 Events::DayTickerEvent(v) => WebsocketEvent::DayTicker(v),
                 Events::KlineEvent(v) => WebsocketEvent::Kline(v),
-
                 Events::DepthOrderBookEvent(v) => WebsocketEvent::DepthOrderBook(v),
             };
             (self.handler)(action)?;
