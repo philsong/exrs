@@ -22,10 +22,9 @@ impl WebsocketAPI {
     fn params(self, subscription: &str) -> String {
         match self {
             WebsocketAPI::Default => format!("wss://fstream.binance.com/ws/{}", subscription),
-            WebsocketAPI::MultiStream => format!(
-                "wss://fstream.binance.com/stream?streams={}",
-                subscription
-            ),
+            WebsocketAPI::MultiStream => {
+                format!("wss://fstream.binance.com/stream?streams={}", subscription)
+            }
             WebsocketAPI::Test => format!("wss://stream.binancefuture.com/ws/{}", subscription),
             WebsocketAPI::Custom(url) => url,
         }

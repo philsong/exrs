@@ -233,10 +233,16 @@ impl Binance for UserStream {
     }
 
     fn new_with_config(
-        api_key: Option<String>, secret_key: Option<String>, config: &Config,
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        config: &Config,
     ) -> UserStream {
         UserStream {
-            client: Client::new(api_key, secret_key, config.futures_testnet_rest_api_endpoint.clone()),
+            client: Client::new(
+                api_key,
+                secret_key,
+                config.futures_testnet_rest_api_endpoint.clone(),
+            ),
             recv_window: config.recv_window,
         }
     }
