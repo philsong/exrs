@@ -227,20 +227,20 @@ pub trait Binance {
 //     }
 // }
 
-// impl Binance for UserStream {
-//     fn new(api_key: Option<String>, secret_key: Option<String>) -> UserStream {
-//         Self::new_with_config(api_key, secret_key, &Config::default())
-//     }
+impl Binance for UserStream {
+    fn new(api_key: Option<String>, secret_key: Option<String>) -> UserStream {
+        Self::new_with_config(api_key, secret_key, &Config::default())
+    }
 
-//     fn new_with_config(
-//         api_key: Option<String>, secret_key: Option<String>, config: &Config,
-//     ) -> UserStream {
-//         UserStream {
-//             client: Client::new(api_key, secret_key, config.rest_api_endpoint.clone()),
-//             recv_window: config.recv_window,
-//         }
-//     }
-// }
+    fn new_with_config(
+        api_key: Option<String>, secret_key: Option<String>, config: &Config,
+    ) -> UserStream {
+        UserStream {
+            client: Client::new(api_key, secret_key, config.futures_testnet_rest_api_endpoint.clone()),
+            recv_window: config.recv_window,
+        }
+    }
+}
 
 // // *****************************************************
 // //              Binance Futures API

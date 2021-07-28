@@ -15,6 +15,7 @@ enum WebsocketAPI {
     Default,
     MultiStream,
     Custom(String),
+    Test,
 }
 
 impl WebsocketAPI {
@@ -25,6 +26,7 @@ impl WebsocketAPI {
                 "wss://fstream.binance.com/stream?streams={}",
                 subscription
             ),
+            WebsocketAPI::Test => format!("wss://stream.binancefuture.com/ws/{}", subscription),
             WebsocketAPI::Custom(url) => url,
         }
     }
@@ -74,6 +76,10 @@ impl<'a> WebSockets<'a> {
 
     pub fn connect(&mut self, subscription: &str) -> Result<()> {
         self.connect_wss(WebsocketAPI::Default.params(subscription))
+    }
+
+    pub fn connect_testnet(&mut self, subscription: &str) -> Result<()> {
+        self.connect_wss(WebsocketAPI::Test.params(subscription))
     }
 
     pub fn connect_with_config(&mut self, subscription: &str, config: &Config) -> Result<()> {
