@@ -628,12 +628,12 @@ pub struct AccountUpdateEvent {
     pub transaction_time: u64,
 
     #[serde(rename = "a")]
-    pub data: AccountData,
+    pub account_update: AccountUpdate,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct AccountData {
+pub struct AccountUpdate {
     #[serde(rename = "m")]
     pub event_reason_type: String,
 
