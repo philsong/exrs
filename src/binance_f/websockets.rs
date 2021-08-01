@@ -9,6 +9,7 @@ use tungstenite::client::AutoStream;
 use tungstenite::handshake::client::Response;
 use tungstenite::protocol::WebSocket;
 use tungstenite::{connect, Message};
+use log::info;
 
 #[allow(clippy::all)]
 enum WebsocketAPI {
@@ -96,6 +97,7 @@ impl<'a> WebSockets<'a> {
         match connect(url) {
             Ok(answer) => {
                 self.socket = Some(answer);
+                info!("Connected: {}", wss);
                 Ok(())
             }
             Err(e) => bail!(format!("Error during handshake {}", e)),
