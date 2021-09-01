@@ -43,7 +43,7 @@ pub fn to_f64(v: &Value) -> f64 {
     v.as_str().unwrap().parse().unwrap()
 }
 
-fn get_timestamp(start: SystemTime) -> Result<u64> {
+pub fn get_timestamp(start: SystemTime) -> Result<u64> {
     let since_epoch = start.duration_since(UNIX_EPOCH)?;
     Ok(since_epoch.as_secs() * 1000 + u64::from(since_epoch.subsec_nanos()) / 1_000_000)
 }

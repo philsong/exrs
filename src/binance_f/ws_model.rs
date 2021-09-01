@@ -761,7 +761,7 @@ pub struct OrderTradeEvent {
     pub trade_order_time: u64,
 
     #[serde(rename = "t")]
-    pub trade_id: i64,
+    pub trade_id: u64,
 
     #[serde(skip, rename = "I")]
     pub i_ignore: u64,

@@ -4,12 +4,12 @@ use crate::binance_f::ws_model::*;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
+use log::info;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tungstenite::client::AutoStream;
 use tungstenite::handshake::client::Response;
 use tungstenite::protocol::WebSocket;
 use tungstenite::{connect, Message};
-use log::info;
 
 #[allow(clippy::all)]
 enum WebsocketAPI {
