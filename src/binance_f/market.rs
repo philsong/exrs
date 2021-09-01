@@ -26,7 +26,7 @@ use crate::binance_f::client::*;
 use crate::binance_f::errors::*;
 use crate::binance_f::rest_model::*;
 use crate::binance_f::utils::*;
-use serde_json::Value;
+
 use std::collections::BTreeMap;
 
 // TODO

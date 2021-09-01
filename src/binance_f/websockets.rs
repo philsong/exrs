@@ -2,13 +2,15 @@ use crate::binance_f::config::*;
 use crate::binance_f::errors::*;
 use crate::binance_f::ws_model::*;
 use serde::{Deserialize, Serialize};
+
 use url::Url;
 
 use log::info;
+use std::net::TcpStream;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tungstenite::client::AutoStream;
 use tungstenite::handshake::client::Response;
 use tungstenite::protocol::WebSocket;
+use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{connect, Message};
 
 #[allow(clippy::all)]
@@ -46,7 +48,7 @@ pub enum WebsocketEvent {
 }
 
 pub struct WebSockets<'a> {
-    pub socket: Option<(WebSocket<AutoStream>, Response)>,
+    pub socket: Option<(WebSocket<MaybeTlsStream<TcpStream>>, Response)>,
     handler: Box<dyn FnMut(WebsocketEvent) -> Result<()> + 'a>,
 }
 
