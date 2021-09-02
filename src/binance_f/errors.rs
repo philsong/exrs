@@ -14,7 +14,7 @@ pub struct BinanceContentError {
 error_chain! {
     errors {
         BinanceError(response: BinanceContentError)
-     }
+    }
 
     foreign_links {
         ReqError(reqwest::Error);

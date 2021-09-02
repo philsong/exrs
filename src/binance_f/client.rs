@@ -177,7 +177,7 @@ impl Client {
             }
             StatusCode::BAD_REQUEST => {
                 let error: BinanceContentError = response.json()?;
-
+                println!("{:?}", error);
                 Err(ErrorKind::BinanceError(error).into())
             }
             s => {

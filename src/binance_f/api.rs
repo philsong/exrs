@@ -264,7 +264,7 @@ impl Binance for FuturesGeneral {
             client: Client::new(
                 api_key,
                 secret_key,
-                config.futures_rest_api_endpoint.clone(),
+                config.futures_testnet_rest_api_endpoint.clone(),
             ),
         }
     }
@@ -284,7 +284,7 @@ impl Binance for FuturesMarket {
             client: Client::new(
                 api_key,
                 secret_key,
-                config.futures_rest_api_endpoint.clone(),
+                config.futures_testnet_rest_api_endpoint.clone(),
             ),
             recv_window: config.recv_window,
         }
@@ -305,7 +305,7 @@ impl Binance for FuturesAccount {
             client: Client::new(
                 api_key,
                 secret_key,
-                config.futures_rest_api_endpoint.clone(),
+                config.futures_testnet_rest_api_endpoint.clone(),
             ),
             recv_window: config.recv_window,
         }

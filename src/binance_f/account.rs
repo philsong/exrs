@@ -29,6 +29,7 @@ pub enum TimeInForce {
     GTC,
     IOC,
     FOK,
+    GTX,
 }
 
 impl From<TimeInForce> for String {
@@ -37,6 +38,7 @@ impl From<TimeInForce> for String {
             TimeInForce::GTC => String::from("GTC"),
             TimeInForce::IOC => String::from("IOC"),
             TimeInForce::FOK => String::from("FOK"),
+            TimeInForce::GTX => String::from("GTX"),
         }
     }
 }
@@ -187,6 +189,7 @@ impl FuturesAccount {
     pub fn limit_buy<S, F>(
         &self,
         symbol: S,
+        position_side: PositionSide,
         qty: F,
         price: f64,
         time_in_force: TimeInForce,
@@ -198,7 +201,7 @@ impl FuturesAccount {
         let buy = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Buy,
-            position_side: None,
+            position_side: Some(position_side),
             order_type: OrderType::Limit,
             time_in_force: Some(time_in_force),
             qty: Some(qty.into()),
@@ -224,6 +227,7 @@ impl FuturesAccount {
     pub fn test_limit_buy<S, F>(
         &self,
         symbol: S,
+        position_side: PositionSide,
         qty: F,
         price: f64,
         time_in_force: TimeInForce,
@@ -235,7 +239,7 @@ impl FuturesAccount {
         let buy = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Buy,
-            position_side: None,
+            position_side: Some(position_side),
             order_type: OrderType::Limit,
             time_in_force: Some(time_in_force),
             qty: Some(qty.into()),
@@ -260,6 +264,7 @@ impl FuturesAccount {
     pub fn limit_sell<S, F>(
         &self,
         symbol: S,
+        position_side: PositionSide,
         qty: F,
         price: f64,
         time_in_force: TimeInForce,
@@ -271,7 +276,7 @@ impl FuturesAccount {
         let sell = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Sell,
-            position_side: None,
+            position_side: Some(position_side),
             order_type: OrderType::Limit,
             time_in_force: Some(time_in_force),
             qty: Some(qty.into()),
@@ -297,6 +302,7 @@ impl FuturesAccount {
     pub fn test_limit_sell<S, F>(
         &self,
         symbol: S,
+        position_side: PositionSide,
         qty: F,
         price: f64,
         time_in_force: TimeInForce,
@@ -308,7 +314,7 @@ impl FuturesAccount {
         let sell = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Sell,
-            position_side: None,
+            position_side: Some(position_side),
             order_type: OrderType::Limit,
             time_in_force: Some(time_in_force),
             qty: Some(qty.into()),
