@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate error_chain;
+extern crate thiserror;
 
 pub mod binance_f;
 pub mod huobi;
