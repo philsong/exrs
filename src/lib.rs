@@ -2,7 +2,6 @@
 extern crate error_chain;
 
 pub mod binance_f;
-pub mod binance;
 pub mod huobi;
 
 #[cfg(test)]
