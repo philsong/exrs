@@ -31,4 +31,23 @@ impl Client {
             host,
         }
     }
+
+    // pub async fn get_signed(&self, endpoint: &str, request: &str) -> Result<String> {
+    //     let url = self.sign_request(endpoint, request);
+    //     let response = self.client
+    //         .inner 
+    //         .clone() 
+    //         .get(url.as_str()) 
+    //         .headers(self.build_headers(true)?)
+    //         .send()
+    //         .await?
+
+    //     self.handler(response).await
+    // }
+
+    // fn sign_request(&self, endpoint: &str, request: &str) -> String {
+    //     let signed_key = hmac::key::new(hmac::HMAC_SHA256, self.api_secret)
+    // }
+
+
 }
