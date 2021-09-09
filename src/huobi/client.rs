@@ -1,3 +1,4 @@
+use base64;
 use hex::encode as hex_encode;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use reqwest::Response;
@@ -7,9 +8,9 @@ use serde::de;
 use serde_json::from_str;
 use std::time::Duration;
 
-// use crate::errors::error_messages;
-// use crate::errors::*;
-// use crate::util::{build_request_p, build_signed_request_p};
+use crate::huobi::errors::error_messages;
+use crate::huobi::errors::*;
+// use crate::huobi::util::{build_request_p, build_signed_request_p};
 use serde::de::DeserializeOwned;
 
 #[derive(Clone)]
@@ -32,22 +33,63 @@ impl Client {
         }
     }
 
-    // pub async fn get_signed(&self, endpoint: &str, request: &str) -> Result<String> {
-    //     let url = self.sign_request(endpoint, request);
-    //     let response = self.client
-    //         .inner 
-    //         .clone() 
-    //         .get(url.as_str()) 
-    //         .headers(self.build_headers(true)?)
-    //         .send()
-    //         .await?
+    pub async fn get_signed(&self, endpoint: &str, request: &str) -> Result<String> {
+        let url = self.sign_request(endpoint, request);
+        let response = self
+            .inner
+            .clone()
+            .get(url.as_str())
+            .headers(self.build_headers(true)?)
+            .send()
+            .await?;
 
-    //     self.handler(response).await
-    // }
+        self.handler(response).await
+    }
 
-    // fn sign_request(&self, endpoint: &str, request: &str) -> String {
-    //     let signed_key = hmac::key::new(hmac::HMAC_SHA256, self.api_secret)
-    // }
+    fn sign_request(&self, endpoint: &str, request: &str) -> String {
+        let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.api_secret.as_bytes());
+        let signature = base64::encode(hmac::sign(&signed_key, request.as_bytes().as_ref()));
 
+        let request_body: String = format!("{}&signature={}", request, signature);
+        let url: String = format!("{}{}?{}", self.host, endpoint, request_body);
 
+        url
+    }
+
+    fn build_headers(&self, content_type: bool) -> Result<HeaderMap> {
+        let mut custon_headers = HeaderMap::new();
+
+        // custon_headers.insert(USER_AGENT, HeaderValue::from_static("huobi-rs"));
+        if content_type {
+            custon_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        }
+
+        Ok(custon_headers)
+    }
+
+    async fn handler(&self, response: Response) -> Result<String> {
+        match response.status() {
+            StatusCode::OK => {
+                let body = response.bytes().await?;
+                let result = std::str::from_utf8(&body);
+                Ok(result?.to_string())
+            }
+            StatusCode::INTERNAL_SERVER_ERROR => Err(Error::InternalServerError),
+            StatusCode::SERVICE_UNAVAILABLE => Err(Error::ServiceUnavailable),
+            StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
+            StatusCode::BAD_REQUEST => {
+                let error: HuobiContentError = response.json().await?;
+                Err(handle_content_error(error))
+            }
+            s => Err(Error::Msg(format!("Received response: {:?}", s))),
+        }
+    }
+}
+
+fn handle_content_error(error: HuobiContentError) -> crate::huobi::errors::Error {
+    match (error.code, error.msg.as_ref()) {
+        (-1013, error_messages::INVALID_PRICE) => Error::InvalidPrice,
+        (-1125, msg) => Error::InvalidListenKey(msg.to_string()),
+        _ => Error::HuobiError { response: error },
+    }
 }
