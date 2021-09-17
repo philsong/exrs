@@ -1,6 +1,5 @@
 use super::config::*;
 use super::errors::*;
-use super::market::FuturesMarket;
 use super::ws_model::*;
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -102,22 +101,13 @@ impl<'a> FuturesWebSockets<'a> {
         self.connect_wss(FuturesWebsocketAPI::Default.params(subscription))
     }
 
-    pub fn connect_with_config(
-        &mut self,
-        market: FuturesMarket,
-        subscription: &'a str,
-        config: &'a Config,
-    ) -> Result<()> {
+    pub fn connect_with_config(&mut self, subscription: &'a str, config: &'a Config) -> Result<()> {
         self.connect_wss(
             FuturesWebsocketAPI::Custom(config.futures_ws_endpoint.clone()).params(subscription),
         )
     }
 
-    pub fn connect_multiple_streams(
-        &mut self,
-        market: FuturesMarket,
-        endpoints: &[String],
-    ) -> Result<()> {
+    pub fn connect_multiple_streams(&mut self, endpoints: &[String]) -> Result<()> {
         self.connect_wss(FuturesWebsocketAPI::MultiStream.params(&endpoints.join("/")))
     }
 
