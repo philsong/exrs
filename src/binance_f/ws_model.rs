@@ -114,14 +114,6 @@ pub struct AccountInformation {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Balance {
-    pub asset: String,
-    pub free: String,
-    pub locked: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct Order {
     pub symbol: String,
     pub order_id: u64,
@@ -346,31 +338,68 @@ pub struct AccountUpdateEvent {
     #[serde(rename = "E")]
     pub event_time: u64,
 
-    m: u64,
-    t: u64,
-    b: u64,
-    s: u64,
-
     #[serde(rename = "T")]
-    t_ignore: bool,
-    #[serde(rename = "W")]
-    w_ignore: bool,
-    #[serde(rename = "D")]
-    d_ignore: bool,
+    pub transaction_time: u64,
 
-    #[serde(rename = "B")]
-    pub balance: Vec<EventBalance>,
+    #[serde(rename = "a")]
+    pub account_update: AccountUpdate,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct EventBalance {
+pub struct AccountUpdate {
+    #[serde(rename = "m")]
+    pub event_reason_type: String,
+
+    #[serde(rename = "B")]
+    pub balances: Vec<Balance>,
+
+    #[serde(rename = "P")]
+    pub positions: Vec<Position>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Balance {
     #[serde(rename = "a")]
     pub asset: String,
-    #[serde(rename = "f")]
-    pub free: String,
-    #[serde(rename = "l")]
-    pub locked: String,
+
+    #[serde(rename = "wb", with = "string_or_float")]
+    pub wallet_balance: f64,
+
+    #[serde(rename = "cw", with = "string_or_float")]
+    pub cross_wallet_balance: f64,
+
+    #[serde(rename = "bc")]
+    pub balances_change: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Position {
+    #[serde(rename = "s")]
+    pub symbol: String,
+
+    #[serde(rename = "pa", with = "string_or_float")]
+    pub position_amount: f64,
+
+    #[serde(rename = "ep", with = "string_or_float")]
+    pub entry_price: f64,
+
+    #[serde(rename = "cr", with = "string_or_float")]
+    pub accumulated_realized: f64,
+
+    #[serde(rename = "up", with = "string_or_float")]
+    pub unrealized_pnl: f64,
+
+    #[serde(rename = "mt", with = "string_or_float")]
+    pub margin_type: f64,
+
+    #[serde(rename = "iw", with = "string_or_float")]
+    pub isolated_wallet: f64,
+
+    #[serde(rename = "ps")]
+    pub position_side: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -656,17 +685,20 @@ pub struct BookTickerEvent {
     #[serde(rename = "s")]
     pub symbol: String,
 
-    #[serde(rename = "b")]
-    pub best_bid: String,
+    #[serde(rename = "b", with = "string_or_float")]
+    pub best_bid: f64,
 
-    #[serde(rename = "B")]
-    pub best_bid_qty: String,
+    #[serde(rename = "B", with = "string_or_float")]
+    pub best_bid_qty: f64,
 
-    #[serde(rename = "a")]
-    pub best_ask: String,
+    #[serde(rename = "a", with = "string_or_float")]
+    pub best_ask: f64,
 
-    #[serde(rename = "A")]
-    pub best_ask_qty: String,
+    #[serde(rename = "A", with = "string_or_float")]
+    pub best_ask_qty: f64,
+
+    #[serde(rename = "time")]
+    pub transaction_time: u64
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
