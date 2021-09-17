@@ -1,29 +1,73 @@
-use crate::binance_f::api::Futures;
-use crate::binance_f::api::API;
+use serde_json::from_str;
+
 use crate::binance_f::client::*;
 use crate::binance_f::errors::*;
 use crate::binance_f::rest_model::*;
 
+static FUTURES_USER_DATA_STREAM: &str = "/fapi/v1/listenKey";
+
 #[derive(Clone)]
-pub struct UserStream {
+pub struct FuturesUserStream {
     pub client: Client,
     pub recv_window: u64,
 }
 
-impl UserStream {
-    // User Stream
-    pub fn start(&self) -> Result<UserDataStream> {
-        self.client.post(API::Futures(Futures::UserDataStream))
+impl FuturesUserStream {
+    /// Get a listen key for the stream
+    /// # Examples
+    /// ```rust,no_run
+    /// use binance_f::{api::*, userstream::*, config::*};
+    /// let userstream: UserStream = binance_f::new_with_env(&Config::testnet());
+    /// let start = tokio_test::block_on(userstream.start());
+    /// assert!(start.is_ok(), "{:?}", start);
+    /// assert!(start.unwrap().listen_key.len() > 0)
+    /// ```
+    pub async fn start(&self) -> Result<UserDataStream> {
+        let data = self.client.post(FUTURES_USER_DATA_STREAM).await?;
+        let user_data_stream: UserDataStream = from_str(data.as_str())?;
+
+        Ok(user_data_stream)
     }
 
-    // Current open orders on a symbol
-    pub fn keep_alive(&self, listen_key: &str) -> Result<Success> {
-        self.client
-            .put(API::Futures(Futures::UserDataStream), listen_key)
+    /// Keep the connection alive, as the listen key becomes invalid after 60mn
+    /// # Examples
+    /// ```rust,no_run
+    /// use binance_f::{api::*, userstream::*, config::*};
+    /// let userstream: UserStream = binance_f::new_with_env(&Config::testnet());
+    /// let start = tokio_test::block_on(userstream.start());
+    /// assert!(start.is_ok(), "{:?}", start);
+    /// let keep_alive = tokio_test::block_on(userstream.keep_alive(&start.unwrap().listen_key));
+    /// assert!(keep_alive.is_ok())
+    /// ```
+    pub async fn keep_alive(&self, listen_key: &str) -> Result<Success> {
+        let data = self
+            .client
+            .put(FUTURES_USER_DATA_STREAM, listen_key)
+            .await?;
+
+        let success: Success = from_str(data.as_str())?;
+
+        Ok(success)
     }
 
-    pub fn close(&self, listen_key: &str) -> Result<Success> {
-        self.client
-            .delete(API::Futures(Futures::UserDataStream), listen_key)
+    /// Invalidate the listen key
+    /// # Examples
+    /// ```rust,no_run
+    /// use binance_f::{api::*, userstream::*, config::*};
+    /// let userstream: UserStream = binance_f::new_with_env(&Config::testnet());
+    /// let start = tokio_test::block_on(userstream.start());
+    /// assert!(start.is_ok(), "{:?}", start);
+    /// let close = tokio_test::block_on(userstream.close(&start.unwrap().listen_key));
+    /// assert!(close.is_ok())
+    /// ```
+    pub async fn close(&self, listen_key: &str) -> Result<Success> {
+        let data = self
+            .client
+            .delete(FUTURES_USER_DATA_STREAM, listen_key)
+            .await?;
+
+        let success: Success = from_str(data.as_str())?;
+
+        Ok(success)
     }
 }

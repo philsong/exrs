@@ -49,7 +49,11 @@ impl Client {
         self.handler(response).await
     }
 
-    pub async fn get_signed_d<T: de::DeserializeOwned>(&self, endpoint: &str, request: &str) -> Result<T> {
+    pub async fn get_signed_d<T: de::DeserializeOwned>(
+        &self,
+        endpoint: &str,
+        request: &str,
+    ) -> Result<T> {
         let r = self.get_signed(endpoint, request).await?;
         let t = from_str(r.as_str())?;
         Ok(t)
@@ -89,7 +93,9 @@ impl Client {
     }
 
     pub async fn get_d<T: DeserializeOwned, S: serde::Serialize>(
-        &self, endpoint: &str, payload: Option<S>
+        &self,
+        endpoint: &str,
+        payload: Option<S>,
     ) -> Result<T> {
         let req = if let Some(p) = payload {
             build_request_p(p)?

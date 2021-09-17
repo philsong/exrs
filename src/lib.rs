@@ -1,6 +1,8 @@
 #[macro_use]
-extern crate error_chain;
-extern crate thiserror;
+extern crate lazy_static;
+#[macro_use]
+extern crate serde;
+extern crate serde_qs as qs;
 
 pub mod binance_f;
 pub mod huobi;

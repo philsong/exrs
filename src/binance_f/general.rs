@@ -1,8 +1,6 @@
-use crate::binance_f::api::Futures;
-use crate::binance_f::api::API;
-use crate::binance_f::client::*;
-use crate::binance_f::errors::*;
-use crate::binance_f::rest_model::*;
+use super::client::*;
+use super::errors::*;
+use super::rest_model::*;
 
 #[derive(Clone)]
 pub struct FuturesGeneral {
@@ -11,36 +9,37 @@ pub struct FuturesGeneral {
 
 impl FuturesGeneral {
     // Test connectivity
-    pub fn ping(&self) -> Result<String> {
-        self.client.get(API::Futures(Futures::Ping), None)?;
+    pub async fn ping(&self) -> Result<String> {
+        self.client.get("/fapi/v1/ping", "").await?;
         Ok("pong".into())
     }
 
     // Check server time
-    pub fn get_server_time(&self) -> Result<ServerTime> {
-        self.client.get(API::Futures(Futures::Time), None)
+    pub async fn get_server_time(&self) -> Result<ServerTime> {
+        self.client.get_p("/fapi/v1/time", "").await
     }
 
     // Obtain exchange information
     // - Current exchange trading rules and symbol information
-    pub fn exchange_info(&self) -> Result<ExchangeInformation> {
-        self.client.get(API::Futures(Futures::ExchangeInfo), None)
+    pub async fn exchange_info(&self) -> Result<ExchangeInformation> {
+        self.client.get_p("/fapi/v1/exchangeInfo", "").await
     }
 
     // Get Symbol information
-    pub fn get_symbol_info<S>(&self, symbol: S) -> Result<Symbol>
+    pub async fn get_symbol_info<S>(&self, symbol: S) -> Result<Symbol>
     where
         S: Into<String>,
     {
-        let upper_symbol = symbol.into().to_uppercase();
-        match self.exchange_info() {
+        let symbol_string = symbol.into();
+        let upper_symbol = symbol_string.to_uppercase();
+        match self.exchange_info().await {
             Ok(info) => {
                 for item in info.symbols {
                     if item.symbol == upper_symbol {
                         return Ok(item);
                     }
                 }
-                bail!("Symbol not found")
+                Err(Error::UnknownSymbol(symbol_string.clone()))
             }
             Err(e) => Err(e),
         }

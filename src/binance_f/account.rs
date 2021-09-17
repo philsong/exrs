@@ -1,47 +1,17 @@
+use serde::Serializer;
 use std::collections::BTreeMap;
+use std::fmt;
 
-use crate::binance_f::api::{Futures, API};
-use crate::binance_f::client::Client;
-use crate::binance_f::errors::*;
-use crate::binance_f::rest_model::Empty;
-use crate::binance_f::rest_model::{
-    AccountBalance, CanceledOrder, ChangeLeverageResponse, MultiAssetsMarginResponse, Order,
-    Position, PositionModeResponse,
+use super::client::Client;
+use super::errors::*;
+use super::rest_model::MultiAssetsMarginResponse;
+use super::rest_model::PositionModeResponse;
+use super::rest_model::{
+    AccountBalance, CanceledOrder, ChangeLeverageResponse, OrderType, Position, Transaction,
 };
-use crate::binance_f::utils::*;
-
-pub enum OrderSide {
-    Buy,
-    Sell,
-}
-
-impl From<OrderSide> for String {
-    fn from(item: OrderSide) -> Self {
-        match item {
-            OrderSide::Buy => String::from("BUY"),
-            OrderSide::Sell => String::from("SELL"),
-        }
-    }
-}
-
-#[allow(clippy::all)]
-pub enum TimeInForce {
-    GTC,
-    IOC,
-    FOK,
-    GTX,
-}
-
-impl From<TimeInForce> for String {
-    fn from(item: TimeInForce) -> Self {
-        match item {
-            TimeInForce::GTC => String::from("GTC"),
-            TimeInForce::IOC => String::from("IOC"),
-            TimeInForce::FOK => String::from("FOK"),
-            TimeInForce::GTX => String::from("GTX"),
-        }
-    }
-}
+use super::rest_model::{OrderSide, TimeInForce};
+use super::rest_model::{PairAndWindowQuery, PairQuery};
+use super::util::*;
 
 #[derive(Clone)]
 pub struct FuturesAccount {
@@ -49,6 +19,8 @@ pub struct FuturesAccount {
     pub recv_window: u64,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ContractType {
     Perpetual,
     CurrentMonth,
@@ -57,148 +29,119 @@ pub enum ContractType {
     NextQuarter,
 }
 
-impl From<ContractType> for String {
-    fn from(item: ContractType) -> Self {
-        match item {
-            ContractType::Perpetual => String::from("PERPETUAL"),
-            ContractType::CurrentMonth => String::from("CURRENT_MONTH"),
-            ContractType::NextMonth => String::from("NEXT_MONTH"),
-            ContractType::CurrentQuarter => String::from("CURRENT_QUARTER"),
-            ContractType::NextQuarter => String::from("NEXT_QUARTER"),
-        }
+/// By default, use Perpetual
+impl Default for ContractType {
+    fn default() -> Self {
+        Self::Perpetual
     }
 }
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PositionSide {
     Both,
     Long,
     Short,
 }
 
-impl From<PositionSide> for String {
-    fn from(item: PositionSide) -> Self {
-        match item {
-            PositionSide::Both => String::from("BOTH"),
-            PositionSide::Long => String::from("LONG"),
-            PositionSide::Short => String::from("SHORT"),
-        }
-    }
-}
-
-pub enum OrderType {
-    Limit,
-    Market,
-    Stop,
-    StopMarket,
-    TakeProfit,
-    TakeProfitMarket,
-    TrailingStopMarket,
-}
-
-impl From<OrderType> for String {
-    fn from(item: OrderType) -> Self {
-        match item {
-            OrderType::Limit => String::from("LIMIT"),
-            OrderType::Market => String::from("MARKET"),
-            OrderType::Stop => String::from("STOP"),
-            OrderType::StopMarket => String::from("STOP_MARKET"),
-            OrderType::TakeProfit => String::from("TAKE_PROFIT"),
-            OrderType::TakeProfitMarket => String::from("TAKE_PROFIT_MARKET"),
-            OrderType::TrailingStopMarket => String::from("TRAILING_STOP_MARKET"),
-        }
-    }
-}
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum WorkingType {
     MarkPrice,
     ContractPrice,
+    #[serde(other)]
+    Other,
 }
 
-impl From<WorkingType> for String {
-    fn from(item: WorkingType) -> Self {
-        match item {
-            WorkingType::MarkPrice => String::from("MARK_PRICE"),
-            WorkingType::ContractPrice => String::from("CONTRACT_PRICE"),
-        }
+/// Serialize bool as str
+fn serialize_as_str<S, T>(t: &T, serializer: S) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+    T: fmt::Display,
+{
+    serializer.collect_str(t)
+}
+
+/// Serialize opt bool as str
+fn serialize_opt_as_uppercase<S, T>(
+    t: &Option<T>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: Serializer,
+    T: ToString,
+{
+    match *t {
+        Some(ref v) => serializer.serialize_some(&v.to_string().to_uppercase()),
+        None => serializer.serialize_none(),
     }
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct OrderRequest {
     pub symbol: String,
     pub side: OrderSide,
     pub position_side: Option<PositionSide>,
+    #[serde(rename = "type")]
     pub order_type: OrderType,
     pub time_in_force: Option<TimeInForce>,
+    #[serde(rename = "quantity")]
     pub qty: Option<f64>,
     pub reduce_only: Option<bool>,
     pub price: Option<f64>,
-    pub new_client_order_id: Option<String>,
     pub stop_price: Option<f64>,
     pub close_position: Option<bool>,
     pub activation_price: Option<f64>,
     pub callback_rate: Option<f64>,
     pub working_type: Option<WorkingType>,
-    pub price_protect: Option<f64>,
+    #[serde(serialize_with = "serialize_opt_as_uppercase")]
+    pub price_protect: Option<bool>,
 }
 
-// todo: BatchOrder
+/// Order Cancellation Request
+/// perform an order cancellation for the account
+/// only works if the parameters match an active order
+/// either order_id (binance side id) or orig_client_order_id (id originally given by the client) must be set
+#[derive(Default, Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderCancellation {
+    pub symbol: String,
+    pub order_id: Option<u64>,
+    pub orig_client_order_id: Option<String>,
+    /// Cannot be greater than 60000
+    pub recv_window: Option<u64>,
+    pub timestamp: Option<u64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ChangePositionModeRequest {
+    #[serde(serialize_with = "serialize_as_str")]
+    pub dual_side_position: bool,
+}
+
+/// todo: BatchOrder
 struct BatchOrdersRequest {
     pub batch_orders: Vec<OrderRequest>,
 }
 
 impl FuturesAccount {
-    pub fn change_position_mode(&self, dual_side_position: bool) -> Result<()> {
-        let mut parameters: BTreeMap<String, String> = BTreeMap::new();
-        let dual_side = if dual_side_position { "true" } else { "false" };
-        parameters.insert("dualSidePosition".into(), dual_side.into());
-
-        let request = build_signed_request(parameters, self.recv_window)?;
+    async fn post_order(&self, order: OrderRequest) -> Result<Transaction> {
         self.client
-            .post_signed::<Empty>(API::Futures(Futures::PositionSide), request)
-            .map(|_| ())
+            .post_signed_p("/fapi/v1/order", order, self.recv_window)
+            .await
     }
 
-    pub fn get_position_mode(&self) -> Result<PositionModeResponse> {
-        let mut parameters: BTreeMap<String, String> = BTreeMap::new();
-
-        let request = build_signed_request(parameters, self.recv_window)?;
-        self.client
-            .get_signed(API::Futures(Futures::PositionSide), Some(request))
-    }
-
-    pub fn change_multi_assets_mode<S>(&self, mutl_assets_margin: S) -> Result<()>
-    where
-        S: Into<String>,
-    {
-        let mut parameters: BTreeMap<String, String> = BTreeMap::new();
-        parameters.insert("multiAssetsMargin".into(), mutl_assets_margin.into());
-
-        let request = build_signed_request(parameters, self.recv_window)?;
-        self.client
-            .post_signed::<Empty>(API::Futures(Futures::MultiAssetsMargin), request)
-            .map(|_| ())
-    }
-
-    pub fn get_multi_assets_mode(&self) -> Result<MultiAssetsMarginResponse> {
-        let mut parameters: BTreeMap<String, String> = BTreeMap::new();
-
-        let request = build_signed_request(parameters, self.recv_window)?;
-        self.client
-            .get_signed(API::Futures(Futures::MultiAssetsMargin), Some(request))
-    }
-
-    // Place a LIMIT order - BUY
-    pub fn limit_buy<S, F>(
+    pub async fn limit_buy(
         &self,
-        symbol: S,
+        symbol: impl Into<String>,
+        qty: impl Into<f64>,
+        price: impl Into<f64>,
         position_side: PositionSide,
-        qty: F,
-        price: f64,
         time_in_force: TimeInForce,
-    ) -> Result<Order>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let buy = OrderRequest {
+    ) -> Result<Transaction> {
+        let order = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Buy,
             position_side: Some(position_side),
@@ -206,8 +149,7 @@ impl FuturesAccount {
             time_in_force: Some(time_in_force),
             qty: Some(qty.into()),
             reduce_only: None,
-            price: Some(price),
-            new_client_order_id: None,
+            price: Some(price.into()),
             stop_price: None,
             close_position: None,
             activation_price: None,
@@ -215,65 +157,18 @@ impl FuturesAccount {
             working_type: None,
             price_protect: None,
         };
-        let order = self.build_order(buy);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed(API::Futures(Futures::Order), request)
+        self.post_order(order).await
     }
 
-    /// Place a test limit order - BUY
-    ///
-    /// This order is sandboxed: it is validated, but not sent to the matching engine.
-    pub fn test_limit_buy<S, F>(
+    pub async fn limit_sell(
         &self,
-        symbol: S,
+        symbol: impl Into<String>,
+        qty: impl Into<f64>,
+        price: impl Into<f64>,
         position_side: PositionSide,
-        qty: F,
-        price: f64,
         time_in_force: TimeInForce,
-    ) -> Result<()>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let buy = OrderRequest {
-            symbol: symbol.into(),
-            side: OrderSide::Buy,
-            position_side: Some(position_side),
-            order_type: OrderType::Limit,
-            time_in_force: Some(time_in_force),
-            qty: Some(qty.into()),
-            reduce_only: None,
-            price: Some(price),
-            new_client_order_id: None,
-            stop_price: None,
-            close_position: None,
-            activation_price: None,
-            callback_rate: None,
-            working_type: None,
-            price_protect: None,
-        };
-        let order = self.build_order(buy);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed::<Empty>(API::Futures(Futures::OrderTest), request)
-            .map(|_| ())
-    }
-
-    /// Place a limit order - SELL
-    pub fn limit_sell<S, F>(
-        &self,
-        symbol: S,
-        position_side: PositionSide,
-        qty: F,
-        price: f64,
-        time_in_force: TimeInForce,
-    ) -> Result<Order>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let sell = OrderRequest {
+    ) -> Result<Transaction> {
+        let order = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Sell,
             position_side: Some(position_side),
@@ -281,8 +176,7 @@ impl FuturesAccount {
             time_in_force: Some(time_in_force),
             qty: Some(qty.into()),
             reduce_only: None,
-            price: Some(price),
-            new_client_order_id: None,
+            price: Some(price.into()),
             stop_price: None,
             close_position: None,
             activation_price: None,
@@ -290,58 +184,16 @@ impl FuturesAccount {
             working_type: None,
             price_protect: None,
         };
-        let order = self.build_order(sell);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed(API::Futures(Futures::Order), request)
-    }
-
-    /// Place a test limit order - SELL
-    ///
-    /// This order is sandboxed: it is validated, but not sent to the matching engine.
-    pub fn test_limit_sell<S, F>(
-        &self,
-        symbol: S,
-        position_side: PositionSide,
-        qty: F,
-        price: f64,
-        time_in_force: TimeInForce,
-    ) -> Result<()>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let sell = OrderRequest {
-            symbol: symbol.into(),
-            side: OrderSide::Sell,
-            position_side: Some(position_side),
-            order_type: OrderType::Limit,
-            time_in_force: Some(time_in_force),
-            qty: Some(qty.into()),
-            reduce_only: None,
-            price: Some(price),
-            new_client_order_id: None,
-            stop_price: None,
-            close_position: None,
-            activation_price: None,
-            callback_rate: None,
-            working_type: None,
-            price_protect: None,
-        };
-        let order = self.build_order(sell);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed::<Empty>(API::Futures(Futures::OrderTest), request)
-            .map(|_| ())
+        self.post_order(order).await
     }
 
     // Place a MARKET order - BUY
-    pub fn market_buy<S, F>(&self, symbol: S, qty: F) -> Result<Order>
+    pub async fn market_buy<S, F>(&self, symbol: S, qty: F) -> Result<Transaction>
     where
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy = OrderRequest {
+        let order = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Buy,
             position_side: None,
@@ -350,7 +202,6 @@ impl FuturesAccount {
             qty: Some(qty.into()),
             reduce_only: None,
             price: None,
-            new_client_order_id: None,
             stop_price: None,
             close_position: None,
             activation_price: None,
@@ -358,51 +209,16 @@ impl FuturesAccount {
             working_type: None,
             price_protect: None,
         };
-        let order = self.build_order(buy);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed(API::Futures(Futures::Order), request)
-    }
-
-    /// Place a test MARKET order - BUY
-    ///
-    /// This order is sandboxed: it is validated, but not sent to the matching engine.
-    pub fn test_market_buy<S, F>(&self, symbol: S, qty: F) -> Result<()>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let buy = OrderRequest {
-            symbol: symbol.into(),
-            side: OrderSide::Buy,
-            position_side: None,
-            order_type: OrderType::Market,
-            time_in_force: None,
-            qty: Some(qty.into()),
-            reduce_only: None,
-            price: None,
-            new_client_order_id: None,
-            stop_price: None,
-            close_position: None,
-            activation_price: None,
-            callback_rate: None,
-            working_type: None,
-            price_protect: None,
-        };
-        let order = self.build_order(buy);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed::<Empty>(API::Futures(Futures::OrderTest), request)
-            .map(|_| ())
+        self.post_order(order).await
     }
 
     // Place a MARKET order - SELL
-    pub fn market_sell<S, F>(&self, symbol: S, qty: F) -> Result<Order>
+    pub async fn market_sell<S, F>(&self, symbol: S, qty: F) -> Result<Transaction>
     where
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let order: OrderRequest = OrderRequest {
             symbol: symbol.into(),
             side: OrderSide::Sell,
             position_side: None,
@@ -411,7 +227,6 @@ impl FuturesAccount {
             qty: Some(qty.into()),
             reduce_only: None,
             price: None,
-            new_client_order_id: None,
             stop_price: None,
             close_position: None,
             activation_price: None,
@@ -419,253 +234,41 @@ impl FuturesAccount {
             working_type: None,
             price_protect: None,
         };
-        let order = self.build_order(sell);
-        let request = build_signed_request(order, self.recv_window)?;
+        self.post_order(order).await
+    }
+    /// Place a cancellation order
+    pub async fn cancel_order(&self, o: OrderCancellation) -> Result<CanceledOrder> {
+        let recv_window = o.recv_window.unwrap_or(self.recv_window);
         self.client
-            .post_signed(API::Futures(Futures::Order), request)
+            .delete_signed_p("/fapi/v1/order", &o, recv_window)
+            .await
     }
 
-    /// Place a test MARKET order - SELL
-    ///
-    /// This order is sandboxed: it is validated, but not sent to the matching engine.
-    pub fn test_market_sell<S, F>(&self, symbol: S, qty: F) -> Result<()>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let sell: OrderRequest = OrderRequest {
-            symbol: symbol.into(),
-            side: OrderSide::Sell,
-            position_side: None,
-            order_type: OrderType::Market,
-            time_in_force: None,
-            qty: Some(qty.into()),
-            reduce_only: None,
-            price: None,
-            new_client_order_id: None,
-            stop_price: None,
-            close_position: None,
-            activation_price: None,
-            callback_rate: None,
-            working_type: None,
-            price_protect: None,
-        };
-        let order = self.build_order(sell);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed::<Empty>(API::Futures(Futures::Order), request)
-            .map(|_| ())
-    }
-
-    /// Place a custom order
-    #[allow(clippy::too_many_arguments)]
-    pub fn custom_order<S, F>(
-        &self,
-        symbol: S,
-        order_side: OrderSide,
-        position_side: PositionSide,
-        order_type: OrderType,
-        time_in_force: TimeInForce,
-        qty: F,
-        reduce_only: Option<bool>,
-        price: f64,
-        new_client_order_id: Option<String>,
-        stop_price: Option<f64>,
-        close_position: Option<bool>,
-        activation_price: Option<f64>,
-        callback_rate: Option<f64>,
-        working_type: Option<WorkingType>,
-        price_protect: Option<f64>,
-    ) -> Result<Order>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let custom_order: OrderRequest = OrderRequest {
-            symbol: symbol.into(),
-            side: order_side,
-            position_side: Some(position_side),
-            order_type: order_type,
-            time_in_force: Some(time_in_force),
-            qty: Some(qty.into()),
-            reduce_only: reduce_only,
-            price: Some(price),
-            new_client_order_id: new_client_order_id,
-            stop_price: stop_price,
-            close_position: close_position,
-            activation_price: activation_price,
-            callback_rate: callback_rate,
-            working_type: working_type,
-            price_protect: price_protect,
-        };
-        let order = self.build_order(custom_order);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed(API::Futures(Futures::Order), request)
-    }
-
-    /// Place a custom order
-    #[allow(clippy::too_many_arguments)]
-    pub fn test_custom_order<S, F>(
-        &self,
-        symbol: S,
-        order_side: OrderSide,
-        position_side: PositionSide,
-        order_type: OrderType,
-        time_in_force: TimeInForce,
-        qty: F,
-        reduce_only: Option<bool>,
-        price: f64,
-        new_client_order_id: Option<String>,
-        stop_price: Option<f64>,
-        close_position: Option<bool>,
-        activation_price: Option<f64>,
-        callback_rate: Option<f64>,
-        working_type: Option<WorkingType>,
-        price_protect: Option<f64>,
-    ) -> Result<()>
-    where
-        S: Into<String>,
-        F: Into<f64>,
-    {
-        let custom_order: OrderRequest = OrderRequest {
-            symbol: symbol.into(),
-            side: order_side,
-            position_side: Some(position_side),
-            order_type: order_type,
-            time_in_force: Some(time_in_force),
-            qty: Some(qty.into()),
-            reduce_only: reduce_only,
-            price: Some(price),
-            new_client_order_id: new_client_order_id,
-            stop_price: stop_price,
-            close_position: close_position,
-            activation_price: activation_price,
-            callback_rate: callback_rate,
-            working_type: working_type,
-            price_protect: price_protect,
-        };
-        let order = self.build_order(custom_order);
-        let request = build_signed_request(order, self.recv_window)?;
-        self.client
-            .post_signed::<Empty>(API::Futures(Futures::OrderTest), request)
-            .map(|_| ())
-    }
-
-    pub fn cancel_order<S>(&self, symbol: S, order_id: u64) -> Result<CanceledOrder>
+    pub async fn position_information<S>(&self, symbol: S) -> Result<Vec<Position>>
     where
         S: Into<String>,
     {
-        let mut parameters = BTreeMap::new();
-        parameters.insert("symbol".into(), symbol.into());
-        parameters.insert("orderId".into(), order_id.to_string());
-
-        let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .delete_signed(API::Futures(Futures::Order), Some(request))
+            .get_signed_p(
+                "/fapi/v2/positionRisk",
+                Some(PairAndWindowQuery {
+                    symbol: symbol.into(),
+                    recv_window: self.recv_window,
+                }),
+                self.recv_window,
+            )
+            .await
     }
 
-    pub fn cancel_order_with_client_id<S>(
-        &self,
-        symbol: S,
-        orig_client_order_id: String,
-    ) -> Result<CanceledOrder>
-    where
-        S: Into<String>,
-    {
-        let mut parameters = BTreeMap::new();
-        parameters.insert("symbol".into(), symbol.into());
-        parameters.insert("orderId".into(), orig_client_order_id);
-
-        let request = build_signed_request(parameters, self.recv_window)?;
-        self.client
-            .delete_signed(API::Futures(Futures::Order), Some(request))
-    }
-
-    pub fn test_cancel_order<S>(&self, symbol: S, order_id: u64) -> Result<()>
-    where
-        S: Into<String>,
-    {
-        let mut parameters = BTreeMap::new();
-        parameters.insert("symbol".into(), symbol.into());
-        parameters.insert("orderId".into(), order_id.to_string());
-
-        let request = build_signed_request(parameters, self.recv_window)?;
-        self.client
-            .delete_signed::<Empty>(API::Futures(Futures::OrderTest), Some(request))
-            .map(|_| ())
-    }
-
-    fn build_order(&self, order: OrderRequest) -> BTreeMap<String, String> {
-        let mut parameters = BTreeMap::new();
-        parameters.insert("symbol".into(), order.symbol);
-        parameters.insert("side".into(), order.side.into());
-        parameters.insert("type".into(), order.order_type.into());
-
-        if let Some(position_side) = order.position_side {
-            parameters.insert("positionSide".into(), position_side.into());
-        }
-        if let Some(time_in_force) = order.time_in_force {
-            parameters.insert("timeInForce".into(), time_in_force.into());
-        }
-        if let Some(qty) = order.qty {
-            parameters.insert("quantity".into(), qty.to_string());
-        }
-        if let Some(reduce_only) = order.reduce_only {
-            parameters.insert("reduceOnly".into(), reduce_only.to_string().to_uppercase());
-        }
-        if let Some(price) = order.price {
-            parameters.insert("price".into(), price.to_string());
-        }
-        if let Some(stop_price) = order.stop_price {
-            parameters.insert("stopPrice".into(), stop_price.to_string());
-        }
-        if let Some(close_position) = order.close_position {
-            parameters.insert(
-                "closePosition".into(),
-                close_position.to_string().to_uppercase(),
-            );
-        }
-        if let Some(activation_price) = order.activation_price {
-            parameters.insert("activationPrice".into(), activation_price.to_string());
-        }
-        if let Some(callback_rate) = order.callback_rate {
-            parameters.insert("callbackRate".into(), callback_rate.to_string());
-        }
-        if let Some(working_type) = order.working_type {
-            parameters.insert("workingType".into(), working_type.into());
-        }
-        if let Some(price_protect) = order.price_protect {
-            parameters.insert(
-                "priceProtect".into(),
-                price_protect.to_string().to_uppercase(),
-            );
-        }
-
-        parameters
-    }
-
-    pub fn position_information<S>(&self, symbol: S) -> Result<Vec<Position>>
-    where
-        S: Into<String>,
-    {
-        let mut parameters = BTreeMap::new();
-        parameters.insert("symbol".into(), symbol.into());
-
-        let request = build_signed_request(parameters, self.recv_window)?;
-        self.client
-            .get_signed(API::Futures(Futures::PositionRisk), Some(request))
-    }
-
-    pub fn account_balance(&self) -> Result<Vec<AccountBalance>> {
+    pub async fn account_balance(&self) -> Result<Vec<AccountBalance>> {
         let parameters = BTreeMap::new();
-
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .get_signed(API::Futures(Futures::Balance), Some(request))
+            .get_signed_d("/fapi/v2/balance", request.as_str())
+            .await
     }
 
-    pub fn change_initial_leverage<S>(
+    pub async fn change_initial_leverage<S>(
         &self,
         symbol: S,
         leverage: u8,
@@ -679,29 +282,79 @@ impl FuturesAccount {
 
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .post_signed(API::Futures(Futures::ChangeInitialLeverage), request)
+            .post_signed_d("/fapi/v1/leverage", request.as_str())
+            .await
     }
 
-    pub fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<()>
+    pub async fn change_position_mode(&self, dual_side_position: bool) -> Result<()> {
+        self.client
+            .post_signed_p(
+                "/fapi/v1/positionSide/dual",
+                ChangePositionModeRequest { dual_side_position },
+                self.recv_window,
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<()>
+    where
+        S: Into<String>,
+    {
+        self.client
+            .delete_signed_p(
+                "/fapi/v1/allOpenOrders",
+                PairQuery {
+                    symbol: symbol.into(),
+                },
+                self.recv_window,
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_all_open_orders<S>(&self, symbol: S) -> Result<Vec<Transaction>>
+    where
+        S: Into<String>,
+    {
+        self.client
+            .get_signed_p(
+                "/fapi/v2/openOrders",
+                Some(PairAndWindowQuery {
+                    symbol: symbol.into(),
+                    recv_window: self.recv_window,
+                }),
+                self.recv_window,
+            )
+            .await
+    }
+
+    pub async fn get_position_mode(&self) -> Result<PositionModeResponse> {
+        let parameters = BTreeMap::new();
+        let request = build_signed_request(parameters, self.recv_window)?;
+        self.client
+            .get_signed_d("/fapi/v2/positionSide/dual", request.as_str())
+            .await
+    }
+
+    pub async fn get_multi_assets_mode(&self) -> Result<MultiAssetsMarginResponse> {
+        let parameters: BTreeMap<String, String> = BTreeMap::new();
+        let request = build_signed_request(parameters, self.recv_window)?;
+        self.client
+            .get_signed_d("/fapi/v1/multiAssetsMargin", request.as_str())
+            .await
+    }
+
+    pub async fn change_multi_assets_mode<S>(&self, mutl_assets_margin: S) -> Result<()>
     where
         S: Into<String>,
     {
         let mut parameters: BTreeMap<String, String> = BTreeMap::new();
-        parameters.insert("symbol".into(), symbol.into());
+        parameters.insert("multiAssetsMargin".into(), mutl_assets_margin.into());
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .delete_signed::<Empty>(API::Futures(Futures::AllOpenOrders), Some(request))
-            .map(|_| ())
-    }
-
-    pub fn get_all_open_orders<S>(&self, symbol: S) -> Result<Vec<Order>>
-    where
-        S: Into<String>,
-    {
-        let mut parameters: BTreeMap<String, String> = BTreeMap::new();
-        parameters.insert("symbol".into(), symbol.into());
-        let request = build_signed_request(parameters, self.recv_window)?;
-        self.client
-            .get_signed(API::Futures(Futures::Order), Some(request))
+            .post_signed_d("/fapi/v1/multiAssetsMargin", request.as_str())
+            .await?;
+        Ok(())
     }
 }

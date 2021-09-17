@@ -1,13 +1,176 @@
-use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Clone)]
-pub struct Empty {}
+#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+pub struct Asks {
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+    #[serde(with = "string_or_float")]
+    pub qty: f64,
+}
+
+impl Asks {
+    pub fn new(price: f64, qty: f64) -> Asks {
+        Asks { price, qty }
+    }
+}
+
+#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+pub struct Bids {
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+    #[serde(with = "string_or_float")]
+    pub qty: f64,
+}
+
+impl Bids {
+    pub fn new(price: f64, qty: f64) -> Bids {
+        Bids { price, qty }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "filterType")]
+pub enum Filters {
+    #[serde(rename = "PRICE_FILTER")]
+    #[serde(rename_all = "camelCase")]
+    PriceFilter {
+        min_price: String,
+        max_price: String,
+        tick_size: String,
+    },
+    #[serde(rename = "PERCENT_PRICE")]
+    #[serde(rename_all = "camelCase")]
+    PercentPrice {
+        multiplier_up: String,
+        multiplier_down: String,
+        avg_price_mins: Option<f64>,
+    },
+    #[serde(rename = "LOT_SIZE")]
+    #[serde(rename_all = "camelCase")]
+    LotSize {
+        min_qty: String,
+        max_qty: String,
+        step_size: String,
+    },
+    #[serde(rename = "MIN_NOTIONAL")]
+    #[serde(rename_all = "camelCase")]
+    MinNotional {
+        notional: Option<String>,
+        min_notional: Option<String>,
+        apply_to_market: Option<bool>,
+        avg_price_mins: Option<f64>,
+    },
+    #[serde(rename = "ICEBERG_PARTS")]
+    #[serde(rename_all = "camelCase")]
+    IcebergParts { limit: Option<u16> },
+    #[serde(rename = "MAX_NUM_ORDERS")]
+    #[serde(rename_all = "camelCase")]
+    MaxNumOrders { max_num_orders: Option<u16> },
+    #[serde(rename = "MAX_NUM_ALGO_ORDERS")]
+    #[serde(rename_all = "camelCase")]
+    MaxNumAlgoOrders { max_num_algo_orders: Option<u16> },
+    #[serde(rename = "MAX_NUM_ICEBERG_ORDERS")]
+    #[serde(rename_all = "camelCase")]
+    MaxNumIcebergOrders { max_num_iceberg_orders: u16 },
+    #[serde(rename = "MAX_POSITION")]
+    #[serde(rename_all = "camelCase")]
+    MaxPosition { max_position: String },
+    #[serde(rename = "MARKET_LOT_SIZE")]
+    #[serde(rename_all = "camelCase")]
+    MarketLotSize {
+        min_qty: String,
+        max_qty: String,
+        step_size: String,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum Klines {
+    AllKlines(Vec<Kline>),
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Kline {
+    pub open_time: i64,
+    #[serde(with = "string_or_float")]
+    pub open: f64,
+    #[serde(with = "string_or_float")]
+    pub high: f64,
+    #[serde(with = "string_or_float")]
+    pub low: f64,
+    #[serde(with = "string_or_float")]
+    pub close: f64,
+    #[serde(with = "string_or_float")]
+    pub volume: f64,
+    pub close_time: i64,
+    #[serde(with = "string_or_float")]
+    pub quote_asset_volume: f64,
+    pub number_of_trades: i64,
+    #[serde(with = "string_or_float")]
+    pub taker_buy_base_asset_volume: f64,
+    #[serde(with = "string_or_float")]
+    pub taker_buy_quote_asset_volume: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RateLimit {
+    pub rate_limit_type: String,
+    pub interval: String,
+    pub interval_num: u16,
+    pub limit: u64,
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerTime {
     pub server_time: u64,
+}
+
+// User Stream
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UserDataStream {
+    pub listen_key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Success {}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(untagged)]
+pub enum Prices {
+    AllPrices(Vec<SymbolPrice>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SymbolPrice {
+    pub symbol: String,
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum BookTickers {
+    AllBookTickers(Vec<BookTicker>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BookTicker {
+    pub symbol: String,
+    #[serde(with = "string_or_float")]
+    pub bid_price: f64,
+    #[serde(with = "string_or_float")]
+    pub bid_qty: f64,
+    #[serde(with = "string_or_float")]
+    pub ask_price: f64,
+    #[serde(with = "string_or_float")]
+    pub ask_qty: f64,
+    pub time: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -23,23 +186,6 @@ pub struct ExchangeInformation {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct RateLimit {
-    pub interval: String,
-    pub interval_num: u16,
-    pub limit: u64,
-    pub rate_limit_type: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Assets {
-    pub asset: String,
-    pub margin_available: String,
-    pub auto_asset_exchange: Option<u16>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct Symbol {
     pub symbol: String,
     pub pair: String,
@@ -47,63 +193,24 @@ pub struct Symbol {
     pub delivery_date: u64,
     pub onboard_date: u64,
     pub status: String,
-    pub maint_margin_percent: Decimal,
-    pub required_margin_percent: Decimal,
+    #[serde(with = "string_or_float")]
+    pub maint_margin_percent: f64,
+    #[serde(with = "string_or_float")]
+    pub required_margin_percent: f64,
     pub base_asset: String,
     pub quote_asset: String,
     pub price_precision: u64,
-    pub quantity_precision: u64,
+    pub quantity_precision: u16,
     pub base_asset_precision: u64,
     pub quote_precision: u64,
     pub underlying_type: String,
     pub underlying_sub_type: Vec<String>,
     pub settle_plan: u16,
-    pub trigger_protect: Decimal,
+    #[serde(with = "string_or_float")]
+    pub trigger_protect: f64,
     pub filters: Vec<Filters>,
     pub order_types: Vec<String>,
     pub time_in_force: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(tag = "filterType")]
-pub enum Filters {
-    #[serde(rename = "PRICE_FILTER")]
-    #[serde(rename_all = "camelCase")]
-    PriceFilter {
-        max_price: Decimal,
-        min_price: Decimal,
-        tick_size: Decimal,
-    },
-    #[serde(rename = "LOT_SIZE")]
-    #[serde(rename_all = "camelCase")]
-    LotSize {
-        min_qty: Decimal,
-        max_qty: Decimal,
-        step_size: Decimal,
-    },
-    #[serde(rename = "MARKET_LOT_SIZE")]
-    #[serde(rename_all = "camelCase")]
-    MarketLotSize {
-        min_qty: Decimal,
-        max_qty: Decimal,
-        step_size: Decimal,
-    },
-    #[serde(rename = "MAX_NUM_ORDERS")]
-    #[serde(rename_all = "camelCase")]
-    MaxNumOrders { max_num_orders: Option<u16> },
-    #[serde(rename = "MAX_NUM_ALGO_ORDERS")]
-    #[serde(rename_all = "camelCase")]
-    MaxNumAlgoOrders { max_num_algo_orders: Option<u16> },
-    #[serde(rename = "MIN_NOTIONAL")]
-    #[serde(rename_all = "camelCase")]
-    MinNotional { notional: Option<Decimal> },
-    #[serde(rename = "PERCENT_PRICE")]
-    #[serde(rename_all = "camelCase")]
-    PercentPrice {
-        multiplier_up: Decimal,
-        multiplier_down: Decimal,
-        multiplier_decimal: Decimal,
-    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -120,28 +227,32 @@ pub struct OrderBook {
     pub asks: Vec<Asks>,
 }
 
-#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
-pub struct Bids {
-    pub price: Decimal,
-    pub qty: Decimal,
-}
-
-impl Bids {
-    pub fn new(price: Decimal, qty: Decimal) -> Bids {
-        Bids { price, qty }
-    }
-}
-
-#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
-pub struct Asks {
-    pub price: Decimal,
-    pub qty: Decimal,
-}
-
-impl Asks {
-    pub fn new(price: Decimal, qty: Decimal) -> Asks {
-        Asks { price, qty }
-    }
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PriceStats {
+    pub symbol: String,
+    pub price_change: String,
+    pub price_change_percent: String,
+    pub weighted_avg_price: String,
+    #[serde(with = "string_or_float")]
+    pub last_price: f64,
+    #[serde(with = "string_or_float")]
+    pub open_price: f64,
+    #[serde(with = "string_or_float")]
+    pub high_price: f64,
+    #[serde(with = "string_or_float")]
+    pub low_price: f64,
+    #[serde(with = "string_or_float")]
+    pub volume: f64,
+    #[serde(with = "string_or_float")]
+    pub quote_volume: f64,
+    #[serde(with = "string_or_float")]
+    pub last_qty: f64,
+    pub open_time: u64,
+    pub close_time: u64,
+    pub first_id: u64,
+    pub last_id: u64,
+    pub count: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -154,17 +265,14 @@ pub enum Trades {
 #[serde(rename_all = "camelCase")]
 pub struct Trade {
     pub id: u64,
-    pub price: Decimal,
-    pub qty: Decimal,
-    pub quote_qty: Decimal,
-    pub time: u64,
     pub is_buyer_maker: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum HistoricalTrades {
-    AllTrades(Vec<Trade>),
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+    #[serde(with = "string_or_float")]
+    pub qty: f64,
+    #[serde(with = "string_or_float")]
+    pub quote_qty: f64,
+    pub time: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -178,10 +286,10 @@ pub enum AggTrades {
 pub struct AggTrade {
     #[serde(rename = "a")]
     pub agg_id: u64,
-    #[serde(rename = "p")]
-    pub price: Decimal,
-    #[serde(rename = "q")]
-    pub qty: Decimal,
+    #[serde(rename = "p", with = "string_or_float")]
+    pub price: f64,
+    #[serde(rename = "q", with = "string_or_float")]
+    pub qty: f64,
     #[serde(rename = "f")]
     pub first_id: u64,
     #[serde(rename = "l")]
@@ -193,409 +301,46 @@ pub struct AggTrade {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Kline {
-    pub open_time: u64,
-
-    pub open: Decimal,
-
-    pub high: Decimal,
-
-    pub low: Decimal,
-
-    pub close: Decimal,
-
-    pub volume: Decimal,
-
-    pub close_time: u64,
-
-    pub quote_asset_volume: Decimal,
-
-    pub number_of_trades: u64,
-
-    pub taker_buy_base_asset_volume: Decimal,
-
-    pub taker_buy_quote_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub ignore: Decimal,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
-pub enum Klines {
-    AllKlines(Vec<Kline>),
+pub enum MarkPrices {
+    AllMarkPrices(Vec<MarkPrice>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct ContinuousKline {
-    pub open_time: u64,
-
-    pub open: Decimal,
-
-    pub high: Decimal,
-
-    pub low: Decimal,
-
-    pub close: Decimal,
-
-    pub volume: Decimal,
-
-    pub close_time: u64,
-
-    pub quote_asset_volume: Decimal,
-
-    pub number_of_trades: u64,
-
-    pub taker_buy_base_asset_volume: Decimal,
-
-    pub taker_buy_quote_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub ignore: Decimal,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum ContinuousKlines {
-    AllContinuousKlines(Vec<ContinuousKline>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct IndexPriceKline {
-    pub open_time: u64,
-
-    pub open: Decimal,
-
-    pub high: Decimal,
-
-    pub low: Decimal,
-
-    pub close: Decimal,
-
-    #[serde(skip_serializing)]
-    pub volume: Decimal,
-
-    pub close_time: u64,
-
-    #[serde(skip_serializing)]
-    pub quote_asset_volume: Decimal,
-
-    pub number_of_basic_data: u64,
-
-    #[serde(skip_serializing)]
-    pub taker_buy_base_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub taker_buy_quote_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub ignore: Decimal,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum IndexPriceKlines {
-    AllIndexPriceKlines(Vec<IndexPriceKline>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct MarkPriceKline {
-    pub open_time: u64,
-
-    pub open: Decimal,
-
-    pub high: Decimal,
-
-    pub low: Decimal,
-
-    pub close: Decimal,
-
-    #[serde(skip_serializing)]
-    pub volume: Decimal,
-
-    pub close_time: u64,
-
-    #[serde(skip_serializing)]
-    pub quote_asset_volume: Decimal,
-
-    pub number_of_basic_data: u64,
-
-    #[serde(skip_serializing)]
-    pub taker_buy_base_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub taker_buy_quote_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub ignore: Decimal,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum MarkPriceKlines {
-    AllMarkPriceKlines(Vec<MarkPriceKline>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PremiumIndex {
+pub struct MarkPrice {
     pub symbol: String,
-    pub mark_price: Decimal,
-    pub index_price: Decimal,
-    pub estimated_settle_price: Option<Decimal>,
-    pub last_funding_rate: Decimal,
-    pub next_funding_time: u64,
-    pub interest_rate: Decimal,
-    pub time: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum PremiumIndexs {
-    AllPremiumIndexs(Vec<PremiumIndex>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct FundingRate {
-    pub symbol: String,
-    pub funding_rate: Decimal,
-    pub funding_time: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum FundingRates {
-    AllFundingRate(Vec<FundingRate>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Ticker24hr {
-    pub symbol: String,
-    pub price_change: Decimal,
-    pub price_change_percent: Decimal,
-    pub weighted_avg_price: Decimal,
-    pub prev_close_price: Decimal,
-    pub last_price: Decimal,
-    pub last_qty: Decimal,
-    pub open_price: Decimal,
-    pub high_price: Decimal,
-    pub low_price: Decimal,
-    pub volume: Decimal,
-    pub quote_volume: Decimal,
-    pub open_time: u64,
-    pub close_time: u64,
-    pub first_id: u64,
-    pub last_id: u64,
-    pub count: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum Ticker24hrs {
-    AllTicker24hrs(Vec<Ticker24hr>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct TickerPrice {
-    pub symbol: String,
-    pub price: Decimal,
-    pub time: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum TickerPrices {
-    AllTickerPrices(Vec<TickerPrice>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct BookTicker {
-    pub symbol: String,
-    pub bid_price: Decimal,
-    pub bid_qty: Decimal,
-    pub ask_price: Decimal,
-    pub ask_qty: Decimal,
-    pub time: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum BookTickers {
-    AllBookTickers(Vec<BookTicker>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct OpenInterest {
-    pub open_interest: Decimal,
-    pub symbol: String,
-    pub time: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct OpenInterestHist {
-    pub symbol: String,
-    pub sum_open_interest: Decimal,
-    pub sum_open_interest_value: String,
-    pub timestamp: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum OpenInterestHists {
-    AllOpenInterestHists(Vec<OpenInterestHist>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct TopLongShortAccountRatio {
-    pub symbol: String,
-    pub long_short_ratio: Decimal,
-    pub long_account: Decimal,
-    pub short_account: Decimal,
-    pub timestamp: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum TopLongShortAccountRatios {
-    AllTopLongShortAccountRatios(Vec<TopLongShortAccountRatio>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct TopLongShortPositionRatio {
-    pub symbol: String,
-    pub long_short_ratio: Decimal,
-    #[serde(rename = "longAccount")]
-    pub long_position: Decimal,
-    #[serde(rename = "shortAccount")]
-    pub short_position: Decimal,
-    pub timestamp: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum TopLongShortPositionRatios {
-    AllTopLongShortPositionRatios(Vec<TopLongShortPositionRatio>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct GlobalLongShortAccountRatio {
-    pub symbol: String,
-    pub long_short_ratio: Decimal,
-    pub long_account: Decimal,
-    pub short_account: Decimal,
-    pub timestamp: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum GlobalLongShortPositionRatios {
-    AllGlobalLongShortPositionRatios(Vec<GlobalLongShortAccountRatio>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct TakerlongshortRatio {
-    pub buy_sell_ratio: Decimal,
-    pub buy_vol: Decimal,
-    pub sell_vol: Decimal,
-    pub timestamp: u64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum TakerlongshortRatios {
-    AllTakerlongshortRatios(Vec<TakerlongshortRatio>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct LvtKline {
-    pub open_time: u64,
-
-    pub open: Decimal,
-
-    pub high: Decimal,
-
-    pub low: Decimal,
-
-    pub close: Decimal,
-
-    pub real_leverage: Decimal,
-
-    pub close_time: u64,
-
-    #[serde(skip_serializing)]
-    pub quote_asset_volume: Decimal,
-
-    pub number_of_nav_update: u64,
-
-    #[serde(skip_serializing)]
-    pub taker_buy_base_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub taker_buy_quote_asset_volume: Decimal,
-
-    #[serde(skip_serializing)]
-    pub ignore: Decimal,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum LvtKlines {
-    AllLvtKlines(Vec<LvtKline>),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct IndexInfo {
-    pub symbol: String,
-    pub time: u64,
-    pub component: String,
-    pub base_asset_list: Vec<BaseAsset>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct BaseAsset {
-    pub base_asset: String,
-    pub quote_asset: String,
-    pub weight_in_quantity: Decimal,
-    pub weight_in_percentage: Decimal,
-}
-
-// Account models
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ChangeLeverageResponse {
-    pub leverage: u8,
     #[serde(with = "string_or_float")]
-    pub max_notional_value: f64,
+    pub mark_price: f64,
+    #[serde(with = "string_or_float")]
+    pub last_funding_rate: f64,
+    pub next_funding_time: u64,
+    pub time: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum LiquidationOrders {
+    AllLiquidationOrders(Vec<LiquidationOrder>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LiquidationOrder {
+    #[serde(with = "string_or_float")]
+    pub average_price: f64,
+    #[serde(with = "string_or_float")]
+    pub executed_qty: f64,
+    #[serde(with = "string_or_float")]
+    pub orig_qty: f64,
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+    pub side: String,
+    pub status: String,
     pub symbol: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PositionModeResponse {
-    pub dual_side_position: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct MultiAssetsMarginResponse {
-    pub multi_assets_margin: bool,
+    pub time: u64,
+    pub time_in_force: String,
+    pub r#type: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -634,6 +379,44 @@ pub struct Order {
     pub update_time: u64,
     pub working_type: String,
     pub price_protect: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Transaction {
+    pub client_order_id: String,
+    #[serde(with = "string_or_float")]
+    pub cum_qty: f64,
+    #[serde(with = "string_or_float")]
+    pub cum_quote: f64,
+    #[serde(with = "string_or_float")]
+    pub executed_qty: f64,
+    pub order_id: u64,
+    #[serde(with = "string_or_float")]
+    pub avg_price: f64,
+    #[serde(with = "string_or_float")]
+    pub orig_qty: f64,
+    pub reduce_only: bool,
+    pub side: String,
+    pub position_side: String,
+    pub status: String,
+    #[serde(with = "string_or_float")]
+    pub stop_price: f64,
+    pub close_position: bool,
+    pub symbol: String,
+    pub time_in_force: String,
+    #[serde(rename = "type")]
+    pub type_name: String,
+    pub orig_type: String,
+    #[serde(default)]
+    #[serde(with = "string_or_float_opt")]
+    pub activate_price: Option<f64>,
+    #[serde(default)]
+    #[serde(with = "string_or_float_opt")]
+    pub price_rate: Option<f64>,
+    pub update_time: u64,
+    pub working_type: String,
+    price_protect: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -718,17 +501,542 @@ pub struct AccountBalance {
     pub update_time: u64,
 }
 
-// User Stream
+// Account models
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserDataStream {
-    pub listen_key: String,
+pub struct ChangeLeverageResponse {
+    pub leverage: u8,
+    #[serde(with = "string_or_float")]
+    pub max_notional_value: f64,
+    pub symbol: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Success {}
+#[serde(rename_all = "camelCase")]
+pub struct PositionModeResponse {
+    pub dual_side_position: bool,
+}
 
-pub(crate) mod string_or_float {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MultiAssetsMarginResponse {
+    pub multi_assets_margin: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PairQuery {
+    pub symbol: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PairAndWindowQuery {
+    pub symbol: String,
+    pub recv_window: u64,
+}
+
+/// How long will an order stay alive
+#[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+pub enum TimeInForce {
+    /// Good Till Canceled
+    GTC,
+    /// Immediate Or Cancel
+    IOC,
+    /// Fill or Kill
+    FOK,
+    /// Good till expired
+    GTX,
+    #[serde(other)]
+    Other,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OrderResponse {
+    Ack,
+    Result,
+    Full,
+    #[serde(other)]
+    Other,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SideEffectType {
+    NoSideEffect,
+    MarginBuy,
+    AutoRepay,
+    #[serde(other)]
+    Other,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OrderSide {
+    Buy,
+    Sell,
+}
+
+/// By default, buy
+impl Default for OrderSide {
+    fn default() -> Self {
+        Self::Buy
+    }
+}
+
+/// Order types, the following restrictions apply
+/// LIMIT_MAKER are LIMIT orders that will be rejected if they would immediately match and trade as a taker.
+/// STOP_LOSS and TAKE_PROFIT will execute a MARKET order when the stopPrice is reached.
+/// Any LIMIT or LIMIT_MAKER type order can be made an iceberg order by sending an icebergQty.
+/// Any order with an icebergQty MUST have timeInForce set to GTC.
+/// MARKET orders using quantity specifies how much a user wants to buy or sell based on the market price.
+/// MARKET orders using quoteOrderQty specifies the amount the user wants to spend (when buying) or receive (when selling) of the quote asset; the correct quantity will be determined based on the market liquidity and quoteOrderQty.
+/// MARKET orders using quoteOrderQty will not break LOT_SIZE filter rules; the order will execute a quantity that will have the notional value as close as possible to quoteOrderQty.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OrderType {
+    Limit,
+    Market,
+    StopLoss,
+    StopLossLimit,
+    TakeProfit,
+    TakeProfitLimit,
+    LimitMaker,
+    #[serde(other)]
+    Other,
+}
+
+/// By default, use market orders
+impl Default for OrderType {
+    fn default() -> Self {
+        Self::Market
+    }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct Empty {}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Assets {
+    pub asset: String,
+    pub margin_available: String,
+    pub auto_asset_exchange: Option<u16>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum HistoricalTrades {
+    AllTrades(Vec<Trade>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ContinuousKline {
+    pub open_time: u64,
+    #[serde(with = "string_or_float")]
+    pub open: f64,
+    #[serde(with = "string_or_float")]
+    pub high: f64,
+    #[serde(with = "string_or_float")]
+    pub low: f64,
+    #[serde(with = "string_or_float")]
+    pub close: f64,
+    #[serde(with = "string_or_float")]
+    pub volume: f64,
+    pub close_time: u64,
+    #[serde(with = "string_or_float")]
+    pub quote_asset_volume: f64,
+    pub number_of_trades: u64,
+    #[serde(with = "string_or_float")]
+    pub taker_buy_base_asset_volume: f64,
+    #[serde(with = "string_or_float")]
+    pub taker_buy_quote_asset_volume: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum ContinuousKlines {
+    AllContinuousKlines(Vec<ContinuousKline>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct IndexPriceKline {
+    pub open_time: u64,
+    #[serde(with = "string_or_float")]
+    pub open: f64,
+    #[serde(with = "string_or_float")]
+    pub high: f64,
+    #[serde(with = "string_or_float")]
+    pub low: f64,
+    #[serde(with = "string_or_float")]
+    pub close: f64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub volume: f64,
+
+    pub close_time: u64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub quote_asset_volume: f64,
+
+    pub number_of_basic_data: u64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub taker_buy_base_asset_volume: f64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub taker_buy_quote_asset_volume: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum IndexPriceKlines {
+    AllIndexPriceKlines(Vec<IndexPriceKline>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MarkPriceKline {
+    pub open_time: u64,
+    #[serde(with = "string_or_float")]
+    pub open: f64,
+    #[serde(with = "string_or_float")]
+    pub high: f64,
+    #[serde(with = "string_or_float")]
+    pub low: f64,
+    #[serde(with = "string_or_float")]
+    pub close: f64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub volume: f64,
+
+    pub close_time: u64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub quote_asset_volume: f64,
+
+    pub number_of_basic_data: u64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub taker_buy_base_asset_volume: f64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub taker_buy_quote_asset_volume: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum MarkPriceKlines {
+    AllMarkPriceKlines(Vec<MarkPriceKline>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PremiumIndex {
+    pub symbol: String,
+    #[serde(with = "string_or_float")]
+    pub mark_price: f64,
+    #[serde(with = "string_or_float")]
+    pub index_price: f64,
+    #[serde(with = "string_or_float_opt")]
+    pub estimated_settle_price: Option<f64>,
+    #[serde(with = "string_or_float")]
+    pub last_funding_rate: f64,
+    pub next_funding_time: u64,
+    #[serde(with = "string_or_float")]
+    pub interest_rate: f64,
+    pub time: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum PremiumIndexs {
+    AllPremiumIndexs(Vec<PremiumIndex>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Ticker24hr {
+    pub symbol: String,
+    #[serde(with = "string_or_float")]
+    pub price_change: f64,
+    #[serde(with = "string_or_float")]
+    pub price_change_percent: f64,
+    #[serde(with = "string_or_float")]
+    pub weighted_avg_price: f64,
+    #[serde(with = "string_or_float")]
+    pub prev_close_price: f64,
+    #[serde(with = "string_or_float")]
+    pub last_price: f64,
+    #[serde(with = "string_or_float")]
+    pub last_qty: f64,
+    #[serde(with = "string_or_float")]
+    pub open_price: f64,
+    #[serde(with = "string_or_float")]
+    pub high_price: f64,
+    #[serde(with = "string_or_float")]
+    pub low_price: f64,
+    #[serde(with = "string_or_float")]
+    pub volume: f64,
+    #[serde(with = "string_or_float")]
+    pub quote_volume: f64,
+    pub open_time: u64,
+    pub close_time: u64,
+    pub first_id: u64,
+    pub last_id: u64,
+    pub count: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum Ticker24hrs {
+    AllTicker24hrs(Vec<Ticker24hr>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TickerPrice {
+    pub symbol: String,
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+    pub time: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum TickerPrices {
+    AllTickerPrices(Vec<TickerPrice>),
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum OpenInterestHistorys {
+    AllOpenInterestHists(Vec<OpenInterestHistory>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TopLongShortAccountRatio {
+    pub symbol: String,
+    pub long_short_ratio: f64,
+    pub long_account: f64,
+    pub short_account: f64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum TopLongShortAccountRatios {
+    AllTopLongShortAccountRatios(Vec<TopLongShortAccountRatio>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TopLongShortPositionRatio {
+    pub symbol: String,
+    pub long_short_ratio: f64,
+    #[serde(rename = "longAccount")]
+    pub long_position: f64,
+    #[serde(rename = "shortAccount")]
+    pub short_position: f64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum TopLongShortPositionRatios {
+    AllTopLongShortPositionRatios(Vec<TopLongShortPositionRatio>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct GlobalLongShortAccountRatio {
+    pub symbol: String,
+    pub long_short_ratio: f64,
+    pub long_account: f64,
+    pub short_account: f64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum GlobalLongShortPositionRatios {
+    AllGlobalLongShortPositionRatios(Vec<GlobalLongShortAccountRatio>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TakerlongshortRatio {
+    #[serde(with = "string_or_float")]
+    pub buy_sell_ratio: f64,
+    #[serde(with = "string_or_float")]
+    pub buy_vol: f64,
+    #[serde(with = "string_or_float")]
+    pub sell_vol: f64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum TakerlongshortRatios {
+    AllTakerlongshortRatios(Vec<TakerlongshortRatio>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LvtKline {
+    pub open_time: u64,
+    #[serde(with = "string_or_float")]
+    pub open: f64,
+    #[serde(with = "string_or_float")]
+    pub high: f64,
+    #[serde(with = "string_or_float")]
+    pub low: f64,
+    #[serde(with = "string_or_float")]
+    pub close: f64,
+    #[serde(with = "string_or_float")]
+    pub real_leverage: f64,
+    pub close_time: u64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub quote_asset_volume: f64,
+    pub number_of_nav_update: u64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub taker_buy_base_asset_volume: f64,
+    #[serde(with = "string_or_float")]
+    #[serde(skip_serializing)]
+    pub taker_buy_quote_asset_volume: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum LvtKlines {
+    AllLvtKlines(Vec<LvtKline>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct IndexInfo {
+    pub symbol: String,
+    pub time: u64,
+    pub component: String,
+    pub base_asset_list: Vec<BaseAsset>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BaseAsset {
+    pub base_asset: String,
+    pub quote_asset: String,
+    #[serde(with = "string_or_float")]
+    pub weight_in_quantity: f64,
+    #[serde(with = "string_or_float")]
+    pub weight_in_percentage: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AveragePrice {
+    pub mins: u64,
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct HistoryQuery {
+    pub start_time: Option<u64>,
+    pub end_time: Option<u64>,
+    pub from_id: Option<u64>,
+    pub limit: u16,
+    pub symbol: String,
+    pub interval: Option<String>,
+    pub period: Option<String>,
+}
+
+impl HistoryQuery {
+    pub fn validate(&self) -> super::errors::Result<()> {
+        if let Some(period) = &self.period {
+            if !PERIODS.contains(&period.as_str()) {
+                return Err(super::errors::Error::InvalidPeriod(period.clone()));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FundingRate {
+    pub symbol: String,
+    pub funding_time: u64,
+    #[serde(with = "string_or_float")]
+    pub funding_rate: f64,
+}
+
+pub static PERIODS: &[&str] = &["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"];
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenInterest {
+    #[serde(with = "string_or_float")]
+    pub open_interest: f64,
+    pub symbol: String,
+    pub time: u64,
+}
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct OpenInterestHistory {
+    pub symbol: String,
+    #[serde(with = "string_or_float")]
+    pub sum_open_interest: f64,
+    #[serde(with = "string_or_float")]
+    pub sum_open_interest_value: f64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LongShortRatio {
+    pub symbol: String,
+    #[serde(with = "string_or_float")]
+    pub long_account: f64,
+    #[serde(with = "string_or_float")]
+    pub long_short_ratio: f64,
+    #[serde(with = "string_or_float")]
+    pub short_account: f64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LeverageBracket {
+    pub bracket: u8,
+    pub initial_leverage: u8,
+    pub notional_cap: u64,
+    pub notional_floor: u64,
+    pub maint_margin_ratio: f64,
+    pub cum: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SymbolBrackets {
+    pub symbol: String,
+    pub brackets: Vec<LeverageBracket>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PropertyCmd {
+    pub id: i32,
+    pub method: String,
+    pub params: (String, bool),
+}
+
+pub mod string_or_float {
     use std::fmt;
 
     use serde::{de, Deserialize, Deserializer, Serializer};
@@ -753,13 +1061,7 @@ pub(crate) mod string_or_float {
         }
 
         match StringOrFloat::deserialize(deserializer)? {
-            StringOrFloat::String(s) => {
-                if s == "INF" {
-                    Ok(f64::INFINITY)
-                } else {
-                    s.parse().map_err(de::Error::custom)
-                }
-            }
+            StringOrFloat::String(s) => s.parse().map_err(de::Error::custom),
             StringOrFloat::Float(i) => Ok(i),
         }
     }
@@ -776,7 +1078,7 @@ pub(crate) mod string_or_float_opt {
         S: Serializer,
     {
         match value {
-            Some(v) => crate::binance_f::rest_model::string_or_float::serialize(v, serializer),
+            Some(v) => super::string_or_float::serialize(v, serializer),
             None => serializer.serialize_none(),
         }
     }
@@ -792,9 +1094,7 @@ pub(crate) mod string_or_float_opt {
             Float(f64),
         }
 
-        Ok(Some(
-            crate::binance_f::rest_model::string_or_float::deserialize(deserializer)?,
-        ))
+        Ok(Some(super::string_or_float::deserialize(deserializer)?))
     }
 }
 
