@@ -47,10 +47,11 @@ async fn user_stream_websocket() {
 
         let mut web_socket: FuturesWebSockets<'_> =
             FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
-                if let FuturesWebsocketEvent::OrderTrade(trade) = event {
+                if let FuturesWebsocketEvent::OrderTradeUpdate(trade) = event {
                     println!(
                         "Symbol: {}, Side: {:?}, Price: {}, Execution Type: {:?}",
-                        trade.symbol, trade.side, trade.price, trade.execution_type
+                        trade.order_trade_update.symbol, trade.order_trade_update.side, 
+                        trade.order_trade_update.average_price, trade.order_trade_update.execution_type
                     );
                 };
 
