@@ -149,36 +149,6 @@ pub struct OrderCanceled {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Transaction {
-    pub symbol: String,
-    pub order_id: u64,
-    pub order_list_id: Option<i64>,
-    pub client_order_id: String,
-    pub transact_time: u64,
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub orig_qty: f64,
-    #[serde(with = "string_or_float")]
-    pub executed_qty: f64,
-    #[serde(with = "string_or_float")]
-    pub cummulative_quote_qty: f64,
-    #[serde(with = "string_or_float", default = "default_stop_price")]
-    pub stop_price: f64,
-    pub status: String,
-    pub time_in_force: String,
-    #[serde(rename = "type")]
-    pub type_name: String,
-    pub side: String,
-    pub fills: Option<Vec<FillInfo>>,
-}
-
-fn default_stop_price() -> f64 {
-    0.0
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct FillInfo {
     #[serde(with = "string_or_float")]
     pub price: f64,
@@ -370,8 +340,8 @@ pub struct Balance {
     #[serde(rename = "cw", with = "string_or_float")]
     pub cross_wallet_balance: f64,
 
-    #[serde(rename = "bc")]
-    pub balances_change: String,
+    #[serde(rename = "bc", with = "string_or_float")]
+    pub balances_change: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -392,102 +362,103 @@ pub struct Position {
     #[serde(rename = "up", with = "string_or_float")]
     pub unrealized_pnl: f64,
 
-    #[serde(rename = "mt", with = "string_or_float")]
-    pub margin_type: f64,
+    #[serde(rename = "mt")]
+    pub margin_type: String,
 
     #[serde(rename = "iw", with = "string_or_float")]
     pub isolated_wallet: f64,
 
     #[serde(rename = "ps")]
     pub position_side: String,
+
+    #[serde(skip, rename = "ma")]
+    pub margin_asset: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct OrderTradeEvent {
+pub struct OrderTradeUpdateEvent {
     #[serde(rename = "e")]
     pub event_type: String,
 
     #[serde(rename = "E")]
     pub event_time: u64,
 
-    #[serde(rename = "s")]
-    pub symbol: String,
-
-    #[serde(rename = "c")]
-    pub new_client_order_id: String,
-
-    #[serde(rename = "S")]
-    pub side: String,
+    #[serde(rename = "T")]
+    pub transaction_time: u64,
 
     #[serde(rename = "o")]
-    pub order_type: String,
+    pub order_trade_update: OrderTradeUpdate,
+}
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OrderTradeUpdate {
+    #[serde(rename = "s")]
+    pub symbol: String,
+    #[serde(rename = "c")]
+    pub client_order_id: String,
+    #[serde(rename = "S")]
+    pub side: String,
+    #[serde(rename = "o")]
+    pub order_type: String,
     #[serde(rename = "f")]
     pub time_in_force: String,
-
-    #[serde(rename = "q")]
-    pub qty: String,
-
-    #[serde(rename = "p")]
-    pub price: String,
-
-    #[serde(skip, rename = "P")]
-    pub p_ignore: String,
-
-    #[serde(skip, rename = "F")]
-    pub f_ignore: String,
-
-    #[serde(skip)]
-    pub g: i32,
-
-    #[serde(skip, rename = "C")]
-    pub c_ignore: Option<String>,
-
+    #[serde(rename = "q", with = "string_or_float")]
+    pub original_quantity: f64,
+    #[serde(rename = "p", with = "string_or_float")]
+    pub original_price: f64,
+    #[serde(rename = "ap", with = "string_or_float")]
+    pub average_price: f64,
+    #[serde(rename = "sp", with = "string_or_float")]
+    pub stop_price: f64,
     #[serde(rename = "x")]
     pub execution_type: String,
-
     #[serde(rename = "X")]
     pub order_status: String,
-
-    #[serde(rename = "r")]
-    pub order_reject_reason: String,
-
     #[serde(rename = "i")]
     pub order_id: u64,
-
-    #[serde(rename = "l")]
-    pub qty_last_filled_trade: String,
-
-    #[serde(rename = "z")]
-    pub accumulated_qty_filled_trades: String,
-
-    #[serde(rename = "L")]
-    pub price_last_filled_trade: String,
-
-    #[serde(rename = "n")]
-    pub commission: String,
-
-    #[serde(skip, rename = "N")]
-    pub asset_commisioned: Option<String>,
-
+    #[serde(rename = "l", with = "string_or_float")]
+    pub order_last_filled_quantity: f64,
+    #[serde(rename = "z", with = "string_or_float")]
+    pub order_filled_accumulated_quantity: f64,
+    #[serde(rename = "L", with = "string_or_float")]
+    pub last_filled_price: f64,
+    #[serde(rename = "N")]
+    pub commission_asset: Option<String>,
+    #[serde(skip, rename = "n", with = "string_or_float_opt")]
+    pub commission: Option<f64>,
     #[serde(rename = "T")]
-    pub trade_order_time: u64,
-
+    pub order_trade_time: u64,
     #[serde(rename = "t")]
-    pub trade_id: i64,
-
-    #[serde(skip, rename = "I")]
-    pub i_ignore: u64,
-
-    #[serde(skip)]
-    pub w: bool,
-
+    pub trade_id: u64,
+    #[serde(rename = "b", with = "string_or_float")]
+    pub bid_notinal: f64,
+    #[serde(rename = "a", with = "string_or_float")]
+    pub ask_notinal: f64,
     #[serde(rename = "m")]
-    pub is_buyer_maker: bool,
-
-    #[serde(skip, rename = "M")]
-    pub m_ignore: bool,
+    pub is_maker: bool,
+    #[serde(rename = "R")]
+    pub reduce_only: bool,
+    #[serde(rename = "wt")]
+    pub stop_price_working_type: String,
+    #[serde(rename = "ot")]
+    pub original_order_type: String,
+    #[serde(rename = "ps")]
+    pub position_side: String,
+    #[serde(rename = "cp")]
+    pub close_all_post_condition_order: Option<bool>,
+    #[serde(skip, rename = "AP", with = "string_or_float_opt")]
+    pub activation_price: Option<f64>,
+    #[serde(skip, rename = "cr", with = "string_or_float_opt")]
+    pub callback_rate: Option<f64>,
+    #[serde(rename = "rp", with = "string_or_float")]
+    pub realized_profit: f64,
+    // undoced
+    #[serde(rename = "pP")]
+    pub p_p: bool,
+    #[serde(with = "string_or_float")]
+    pub si: f64,
+    #[serde(with = "string_or_float")]
+    pub ss: f64,
 }
 
 /// The Aggregate Trade Streams push trade information that is aggregated for a single taker order.

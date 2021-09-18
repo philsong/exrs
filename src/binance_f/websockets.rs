@@ -39,7 +39,7 @@ impl FuturesWebsocketAPI {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum FuturesWebsocketEvent {
     AccountUpdate(Box<AccountUpdateEvent>),
-    OrderTrade(Box<OrderTradeEvent>),
+    OrderTradeUpdate(Box<OrderTradeUpdateEvent>),
     AggrTrades(Box<AggrTradesEvent>),
     Trade(Box<TradeEvent>),
     OrderBook(Box<OrderBook>),
@@ -72,7 +72,7 @@ enum FuturesEvents {
     MiniTickerEvent(MiniTickerEvent),
     VecMiniTickerEvent(Vec<MiniTickerEvent>),
     AccountUpdateEvent(AccountUpdateEvent),
-    OrderTradeEvent(OrderTradeEvent),
+    OrderTradeUpdateEvent(OrderTradeUpdateEvent),
     AggrTradesEvent(AggrTradesEvent),
     IndexPriceEvent(IndexPriceEvent),
     MarkPriceEvent(MarkPriceEvent),
@@ -148,19 +148,33 @@ impl<'a> FuturesWebSockets<'a> {
                 FuturesEvents::DayTickerEvent(v) => FuturesWebsocketEvent::DayTicker(Box::new(v)),
                 FuturesEvents::BookTickerEvent(v) => FuturesWebsocketEvent::BookTicker(Box::new(v)),
                 FuturesEvents::MiniTickerEvent(v) => FuturesWebsocketEvent::MiniTicker(Box::new(v)),
-                FuturesEvents::VecMiniTickerEvent(v) => FuturesWebsocketEvent::MiniTickerAll(Box::new(v)),
-                FuturesEvents::AccountUpdateEvent(v) => FuturesWebsocketEvent::AccountUpdate(Box::new(v)),
-                FuturesEvents::OrderTradeEvent(v) => FuturesWebsocketEvent::OrderTrade(Box::new(v)),
+                FuturesEvents::VecMiniTickerEvent(v) => {
+                    FuturesWebsocketEvent::MiniTickerAll(Box::new(v))
+                }
+                FuturesEvents::AccountUpdateEvent(v) => {
+                    FuturesWebsocketEvent::AccountUpdate(Box::new(v))
+                }
+                FuturesEvents::OrderTradeUpdateEvent(v) => {
+                    FuturesWebsocketEvent::OrderTradeUpdate(Box::new(v))
+                }
                 FuturesEvents::IndexPriceEvent(v) => FuturesWebsocketEvent::IndexPrice(Box::new(v)),
                 FuturesEvents::MarkPriceEvent(v) => FuturesWebsocketEvent::MarkPrice(Box::new(v)),
-                FuturesEvents::VecMarkPriceEvent(v) => FuturesWebsocketEvent::MarkPriceAll(Box::new(v)),
+                FuturesEvents::VecMarkPriceEvent(v) => {
+                    FuturesWebsocketEvent::MarkPriceAll(Box::new(v))
+                }
                 FuturesEvents::TradeEvent(v) => FuturesWebsocketEvent::Trade(Box::new(v)),
-                FuturesEvents::ContinuousKlineEvent(v) => FuturesWebsocketEvent::ContinuousKline(Box::new(v)),
+                FuturesEvents::ContinuousKlineEvent(v) => {
+                    FuturesWebsocketEvent::ContinuousKline(Box::new(v))
+                }
                 FuturesEvents::IndexKlineEvent(v) => FuturesWebsocketEvent::IndexKline(Box::new(v)),
-                FuturesEvents::LiquidationEvent(v) => FuturesWebsocketEvent::Liquidation(Box::new(v)),
+                FuturesEvents::LiquidationEvent(v) => {
+                    FuturesWebsocketEvent::Liquidation(Box::new(v))
+                }
                 FuturesEvents::KlineEvent(v) => FuturesWebsocketEvent::Kline(Box::new(v)),
                 FuturesEvents::OrderBook(v) => FuturesWebsocketEvent::OrderBook(Box::new(v)),
-                FuturesEvents::DepthOrderBookEvent(v) => FuturesWebsocketEvent::DepthOrderBook(Box::new(v)),
+                FuturesEvents::DepthOrderBookEvent(v) => {
+                    FuturesWebsocketEvent::DepthOrderBook(Box::new(v))
+                }
                 FuturesEvents::AggrTradesEvent(v) => FuturesWebsocketEvent::AggrTrades(Box::new(v)),
             };
             (self.handler)(action)?;

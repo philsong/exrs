@@ -1,7 +1,7 @@
 use exrs::binance_f::api::*;
 use exrs::binance_f::userstream::*;
-use exrs::binance_f::websockets::*;
 use exrs::binance_f::websockets::FuturesWebsocketEvent;
+use exrs::binance_f::websockets::*;
 use log::debug;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -45,16 +45,17 @@ async fn user_stream_websocket() {
     if let Ok(answer) = user_stream.start().await {
         let listen_key = answer.listen_key;
 
-        let mut web_socket: FuturesWebSockets<'_> = FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
-            if let FuturesWebsocketEvent::OrderTrade(trade) = event {
-                println!(
-                    "Symbol: {}, Side: {:?}, Price: {}, Execution Type: {:?}",
-                    trade.symbol, trade.side, trade.price, trade.execution_type
-                );
-            };
+        let mut web_socket: FuturesWebSockets<'_> =
+            FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
+                if let FuturesWebsocketEvent::OrderTrade(trade) = event {
+                    println!(
+                        "Symbol: {}, Side: {:?}, Price: {}, Execution Type: {:?}",
+                        trade.symbol, trade.side, trade.price, trade.execution_type
+                    );
+                };
 
-            Ok(())
-        });
+                Ok(())
+            });
 
         web_socket.connect(&listen_key).unwrap(); // check error
         if let Err(e) = web_socket.event_loop(&keep_running) {
@@ -72,22 +73,26 @@ async fn user_stream_websocket() {
 fn market_websocket() {
     let keep_running = AtomicBool::new(true); // Used to control the event loop
     let agg_trade: String = format!("{}@aggTrade", "ethbtc");
-    let mut web_socket: FuturesWebSockets<'_> = FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
-        match event {
-            FuturesWebsocketEvent::Trade(trade) => {
-                println!("Symbol: {}, price: {}, qty: {}", trade.symbol, trade.price, trade.qty);
-            }
-            FuturesWebsocketEvent::DepthOrderBook(depth_order_book) => {
-                println!(
-                    "Symbol: {}, Bids: {:?}, Ask: {:?}",
-                    depth_order_book.symbol, depth_order_book.bids, depth_order_book.asks
-                );
-            }
-            _ => (),
-        };
+    let mut web_socket: FuturesWebSockets<'_> =
+        FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
+            match event {
+                FuturesWebsocketEvent::Trade(trade) => {
+                    println!(
+                        "Symbol: {}, price: {}, qty: {}",
+                        trade.symbol, trade.price, trade.qty
+                    );
+                }
+                FuturesWebsocketEvent::DepthOrderBook(depth_order_book) => {
+                    println!(
+                        "Symbol: {}, Bids: {:?}, Ask: {:?}",
+                        depth_order_book.symbol, depth_order_book.bids, depth_order_book.asks
+                    );
+                }
+                _ => (),
+            };
 
-        Ok(())
-    });
+            Ok(())
+        });
 
     web_socket.connect(&agg_trade).unwrap(); // check error
     if let Err(e) = web_socket.event_loop(&keep_running) {
@@ -102,15 +107,14 @@ fn bookticker_websocket() {
     debug!("hi");
     let keep_running = AtomicBool::new(true);
     let kline: String = "ethusdt@bookTicker".to_string();
-    let mut web_socket: FuturesWebSockets<'_> = FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
-        if let FuturesWebsocketEvent::BookTicker(kline_event) = event {
-            println!(
-                "{:?}", kline_event
-            );
-        }
+    let mut web_socket: FuturesWebSockets<'_> =
+        FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
+            if let FuturesWebsocketEvent::BookTicker(kline_event) = event {
+                println!("{:?}", kline_event);
+            }
 
-        Ok(())
-    });
+            Ok(())
+        });
 
     web_socket.connect(&kline).unwrap(); // check error
     if let Err(e) = web_socket.event_loop(&keep_running) {
