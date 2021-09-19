@@ -3,6 +3,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use thiserror::Error;
 
+use super::websockets::WebsocketEvent;
+
 #[derive(Debug, Clone, Deserialize, Error)]
 #[error("code: {code}, msg: {msg}")]
 pub struct HuobiContentError {
@@ -34,7 +36,9 @@ pub enum Error {
     #[error(transparent)]
     Qs(#[from] serde_qs::Error),
     #[error(transparent)]
-    Tungstenite(#[from] tungstenite::Error),
+    Tungstenite(#[from] tokio_tungstenite::tungstenite::Error),
+    #[error(transparent)]
+    SendError(tokio::sync::mpsc::error::SendError<WebsocketEvent>),
     #[error(transparent)]
     TimestampError(#[from] std::time::SystemTimeError),
     #[error(transparent)]

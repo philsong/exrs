@@ -1,6 +1,6 @@
-use crate::huobi::client::*;
-use crate::huobi::errors::*;
-use crate::huobi::rest_model::*;
-use crate::huobi::util::*;
+use super::client::*;
+use super::errors::*;
+use super::rest_model::*;
+use super::util::*;
 use serde_json::from_str;
 use std::collections::BTreeMap;

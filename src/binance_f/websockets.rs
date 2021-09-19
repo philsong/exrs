@@ -12,7 +12,6 @@ use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{connect, Message};
 
 pub static FUTURES_WS_BASE: &str = "wss://fstream.binance.com";
-pub static FUTURES_STREAM_ENDPOINT: &str = "fstream";
 
 #[allow(clippy::all)]
 enum FuturesWebsocketAPI {
@@ -63,7 +62,7 @@ pub struct FuturesWebSockets<'a> {
     handler: Box<dyn FnMut(FuturesWebsocketEvent) -> Result<()> + 'a>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 enum FuturesEvents {
     Vec(Vec<DayTickerEvent>),
