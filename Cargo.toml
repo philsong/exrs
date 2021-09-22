@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 async-recursion = "0.3.2"
+awc = "2.0.3"
 base64 = "0.13.0"
 chrono = "0.4.19"
 csv = "1.1.6"
