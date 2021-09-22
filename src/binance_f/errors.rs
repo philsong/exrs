@@ -33,7 +33,7 @@ pub enum Error {
     #[error(transparent)]
     Qs(#[from] serde_qs::Error),
     #[error(transparent)]
-    Tungstenite(#[from] tungstenite::Error),
+    WsProtocolError(#[from] awc::error::WsProtocolError),
     #[error(transparent)]
     TimestampError(#[from] std::time::SystemTimeError),
     #[error(transparent)]

@@ -1,16 +1,16 @@
 use exrs::binance_f::api::*;
 use exrs::binance_f::userstream::*;
-use exrs::binance_f::websockets::FuturesWebsocketEvent;
 use exrs::binance_f::websockets::*;
-use log::debug;
+use exrs::binance_f::ws_model::FuturesWebsocketEvent;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-fn main() {
-    //user_stream();
-    //user_stream_websocket();
-    //market_websocket();
-    bookticker_websocket();
-    //all_trades_websocket();
+#[actix_rt::main]
+async fn main() {
+    //user_stream().await;
+    //user_stream_websocket().await;
+    //market_websocket().await;
+    //bookticker_websocket().await;
+    all_trades_websocket().await;
 }
 
 #[allow(dead_code)]
@@ -41,45 +41,44 @@ async fn user_stream_websocket() {
     let keep_running = AtomicBool::new(true); // Used to control the event loop
     let api_key_user = Some("YOUR_KEY".into());
     let user_stream: FuturesUserStream = BinanceF::new(api_key_user, None);
+    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
+    let tx = tx.clone();
     if let Ok(answer) = user_stream.start().await {
         let listen_key = answer.listen_key;
 
-        let mut web_socket: FuturesWebSockets<'_> =
-            FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
-                if let FuturesWebsocketEvent::OrderTradeUpdate(trade) = event {
-                    println!(
-                        "Symbol: {}, Side: {:?}, Price: {}, Execution Type: {:?}",
-                        trade.order_trade_update.symbol,
-                        trade.order_trade_update.side,
-                        trade.order_trade_update.average_price,
-                        trade.order_trade_update.execution_type
-                    );
-                };
+        let mut web_socket: FuturesWebSockets<FuturesWebsocketEvent> = FuturesWebSockets::new(tx);
 
-                Ok(())
-            });
-
-        web_socket.connect(&listen_key).unwrap(); // check error
-        if let Err(e) = web_socket.event_loop(&keep_running) {
+        web_socket.connect(&listen_key).await.unwrap(); // check error
+        if let Err(e) = web_socket.event_loop(&keep_running).await {
             println!("Error: {}", e);
         }
         user_stream.close(&listen_key).await.unwrap();
-        web_socket.disconnect().unwrap();
+        web_socket.disconnect().await.unwrap();
         println!("Userstrem closed and disconnected");
     } else {
         println!("Not able to start an User Stream (Check your API_KEY)");
     }
+
+    loop {
+        let msg = rx.recv().await.unwrap();
+        println!("msg - {:?}", msg);
+    }
 }
 
 #[allow(dead_code)]
-fn market_websocket() {
+async fn market_websocket() {
     let keep_running = AtomicBool::new(true); // Used to control the event loop
-    let agg_trade: String = format!("{}@aggTrade", "ethbtc");
-    let mut web_socket: FuturesWebSockets<'_> =
-        FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
+    let agg_trade: String = format!("{}@aggTrade", "ethusdt");
+    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    let mut web_socket: FuturesWebSockets<FuturesWebsocketEvent> = FuturesWebSockets::new(tx);
+
+    let arbiter = actix_rt::Arbiter::new();
+    arbiter.spawn(async move {
+        loop {
+            let event = rx.recv().await.unwrap();
             match event {
-                FuturesWebsocketEvent::Trade(trade) => {
+                FuturesWebsocketEvent::AggrTrades(trade) => {
                     println!(
                         "Symbol: {}, price: {}, qty: {}",
                         trade.symbol, trade.price, trade.qty
@@ -93,36 +92,69 @@ fn market_websocket() {
                 }
                 _ => (),
             };
+            actix_rt::task::yield_now().await;
+        }
+    });
 
-            Ok(())
-        });
-
-    web_socket.connect(&agg_trade).unwrap(); // check error
-    if let Err(e) = web_socket.event_loop(&keep_running) {
+    web_socket.connect(&agg_trade).await.unwrap(); // check error
+    if let Err(e) = web_socket.event_loop(&keep_running).await {
         println!("Error: {}", e);
     }
-    web_socket.disconnect().unwrap();
+    web_socket.disconnect().await.unwrap();
     println!("disconnected");
 }
 
 #[allow(dead_code)]
-fn bookticker_websocket() {
-    debug!("hi");
+async fn bookticker_websocket() {
     let keep_running = AtomicBool::new(true);
-    let kline: String = "ethusdt@bookTicker".to_string();
-    let mut web_socket: FuturesWebSockets<'_> =
-        FuturesWebSockets::new(|event: FuturesWebsocketEvent| {
-            if let FuturesWebsocketEvent::BookTicker(kline_event) = event {
-                println!("{:?}", kline_event);
-            }
+    let kline: String = "btcusdt@bookTicker".to_string();
+    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    let mut web_socket: FuturesWebSockets<FuturesWebsocketEvent> = FuturesWebSockets::new(tx);
 
-            Ok(())
-        });
+    let arbiter = actix_rt::Arbiter::new();
+    arbiter.spawn(async move {
+        loop {
+            let msg = rx.recv().await.unwrap();
+            println!("{:?}", msg);
+            actix_rt::task::yield_now().await;
+        }
+    });
 
-    web_socket.connect(&kline).unwrap(); // check error
-    if let Err(e) = web_socket.event_loop(&keep_running) {
+    web_socket.connect(&kline).await.unwrap(); // check error
+    if let Err(e) = web_socket.event_loop(&keep_running).await {
         println!("Error: {}", e);
     }
-    web_socket.disconnect().unwrap();
+    web_socket.disconnect().await.unwrap();
+    println!("disconnected");
+}
+
+#[allow(dead_code)]
+async fn all_trades_websocket() {
+    let keep_running = AtomicBool::new(true); // Used to control the event loop
+    let agg_trade = all_ticker_stream();
+    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    let mut web_socket: FuturesWebSockets<Vec<FuturesWebsocketEvent>> = FuturesWebSockets::new(tx);
+
+    let arbiter = actix_rt::Arbiter::new();
+    arbiter.spawn(async move {
+        loop {
+            let events = rx.recv().await.unwrap();
+
+            for tick_events in events {
+                if let FuturesWebsocketEvent::DayTicker(tick_event) = tick_events {
+                    println!(
+                        "Symbol: {}, price: {}, qty: {}",
+                        tick_event.symbol, tick_event.current_close, tick_event.current_close_qty
+                    );
+                }
+            }
+        }
+    });
+
+    web_socket.connect(agg_trade).await.unwrap(); // check error
+    if let Err(e) = web_socket.event_loop(&keep_running).await {
+        println!("Error: {}", e);
+    }
+    web_socket.disconnect().await.unwrap();
     println!("disconnected");
 }
