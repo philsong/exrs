@@ -11,6 +11,10 @@ use tungstenite::protocol::WebSocket;
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{connect, Message};
 
+use awc::{Client, ws};
+use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
+
+
 pub static FUTURES_WS_BASE: &str = "wss://fstream.binance.com";
 
 #[allow(clippy::all)]
