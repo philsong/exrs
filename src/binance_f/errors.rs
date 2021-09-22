@@ -1,4 +1,4 @@
-use hashbrown::HashMap;
+use super::util::HashMap;
 use serde_json::Value;
 use thiserror::Error;
 
