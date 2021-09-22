@@ -5,9 +5,6 @@ use serde_json::Value;
 
 use crate::binance_f::errors::*;
 
-pub type HashMap<K, V> = hashbrown::HashMap<K, V, fxhash::FxBuildHasher>;
-pub type HashSet<V> = hashbrown::HashSet<V, fxhash::FxBuildHasher>;
-
 pub fn build_request(parameters: &BTreeMap<String, String>) -> String {
     let mut request = String::new();
     for (key, value) in parameters {

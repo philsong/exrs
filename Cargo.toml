@@ -8,14 +8,12 @@ edition = "2021"
 
 [dependencies]
 async-recursion = "0.3.2"
-awc = "2.0.3"
+awc = { version = "3.0.0-beta.8", features = ["rustls"] }
 base64 = "0.13.0"
 chrono = "0.4.19"
 csv = "1.1.6"
 env_logger = "0.9.0"
-error-chain = { version = "0.12.4", default-features = false }
 futures = "0.3.17"
-fxhash = "0.2.1"
 hashbrown = { version = "0.11.2", features = ["serde"] }
 hex = "0.4.3"
 hmac = "0.11.0"
