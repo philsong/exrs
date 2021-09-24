@@ -7,10 +7,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[actix_rt::main]
 async fn main() {
     //user_stream().await;
-    //user_stream_websocket().await;
+    user_stream_websocket().await;
     //market_websocket().await;
     //bookticker_websocket().await;
-    all_trades_websocket().await;
+    //all_trades_websocket().await;
 }
 
 #[allow(dead_code)]

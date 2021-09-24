@@ -1,16 +1,16 @@
 use super::config::*;
 use super::errors::*;
 
+use log::debug;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use actix_codec::Framed;
-use awc::BoxedSocket;
-use awc::ClientResponse;
 use awc::{
     ws::{Codec, Frame},
-    Client,
+    BoxedSocket, Client, ClientResponse,
 };
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
 use serde_json::from_slice;
-use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::mpsc;
 
 pub static WS_ENDPOINT: &str = "ws";
@@ -135,7 +135,7 @@ impl<WE: serde::de::DeserializeOwned> FuturesWebSockets<WE> {
         while running.load(Ordering::Relaxed) {
             if let Some((_, ref mut socket)) = self.socket {
                 let message = socket.next().await.unwrap()?;
-                println!("message - {:?}", message);
+                debug!("event_loop message - {:?}", message);
                 match message {
                     Frame::Text(msg) => {
                         if msg.is_empty() {
@@ -154,6 +154,7 @@ impl<WE: serde::de::DeserializeOwned> FuturesWebSockets<WE> {
                     }
                 }
             }
+            actix_rt::task::yield_now().await;
         }
         Ok(())
     }

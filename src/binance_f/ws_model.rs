@@ -38,7 +38,8 @@ pub enum FuturesWebsocketEvent {
     AccountUpdate(Box<AccountUpdateEvent>),
     #[serde(alias = "ORDER_TRADE_UPDATE")]
     OrderTradeUpdate(Box<OrderTradeUpdateEvent>),
-    // todo account_config_update
+    #[serde(alias = "ACCOUNT_CONFIG_UPDATE")]
+    AccountConfigUpdate(Box<AccountConfigUpdateEvent>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -137,6 +138,34 @@ pub struct AccountUpdate {
     pub balances: Vec<Balance>,
     #[serde(rename = "P")]
     pub positions: Vec<Position>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountConfigUpdateEvent {
+    #[serde(rename = "E")]
+    pub event_time: u64,
+    #[serde(rename = "T")]
+    pub transaction_time: u64,
+    pub ac: AccountConfigUpdate1,
+    #[serde(skip)]
+    pub ai: Option<AccountConfigUpdate2>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountConfigUpdate1 {
+    #[serde(rename = "s")]
+    pub symbol: String,
+    #[serde(rename = "l")]
+    pub leverage: u8,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountConfigUpdate2 {
+    #[serde(rename = "j")]
+    pub multi_assets_mode: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
