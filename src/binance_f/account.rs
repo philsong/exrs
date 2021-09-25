@@ -4,6 +4,7 @@ use std::fmt;
 
 use super::client::Client;
 use super::errors::*;
+use super::rest_model::CancelAllOpenOrdersResponse;
 use super::rest_model::MultiAssetsMarginResponse;
 use super::rest_model::PositionModeResponse;
 use super::rest_model::{
@@ -297,7 +298,7 @@ impl FuturesAccount {
         Ok(())
     }
 
-    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<()>
+    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<CancelAllOpenOrdersResponse>
     where
         S: Into<String>,
     {
@@ -309,8 +310,7 @@ impl FuturesAccount {
                 },
                 self.recv_window,
             )
-            .await?;
-        Ok(())
+            .await
     }
 
     pub async fn get_all_open_orders<S>(&self, symbol: S) -> Result<Vec<Transaction>>

@@ -552,6 +552,12 @@ pub enum TimeInForce {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CancelAllOpenOrdersResponse {
+    code: i64,
+    msg: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum OrderResponse {
     Ack,
