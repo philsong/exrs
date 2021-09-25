@@ -553,7 +553,7 @@ pub enum TimeInForce {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CancelAllOpenOrdersResponse {
-    code: i64,
+    code: i16,
     msg: String,
 }
 
