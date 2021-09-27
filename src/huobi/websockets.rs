@@ -117,8 +117,8 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         return Err(Error::Msg(format!("Disconnected {:?}", e)));
                     }
                 }
+                actix_rt::task::yield_now().await;
             }
-            actix_rt::task::yield_now().await;
         }
         Ok(())
     }
