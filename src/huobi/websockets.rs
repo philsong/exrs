@@ -1,93 +1,60 @@
+use crate::huobi::ws_model::SubResponseEvent;
+
 use super::config::*;
 use super::errors::*;
-use super::ws_model::*;
-use futures::Future;
-use futures::StreamExt;
-use serde::{Deserialize, Serialize};
-use url::Url;
 
-use async_recursion::async_recursion;
-use std::pin::Pin;
+use log::debug;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
-use tokio::sync::mpsc::{Receiver, Sender};
-use tokio_tungstenite::tungstenite::Message;
-use tokio_tungstenite::WebSocketStream;
-use tokio_tungstenite::{connect_async, MaybeTlsStream};
-use tungstenite::handshake::client::Response;
+use std::str::from_utf8;
 
-pub static WS_BASE: &str = "wss://api.huobi.pro/";
-pub static WS_ENDPOINT: &str = "ws";
-pub static MBP_ENDPOINT: &str = "feed";
-pub static ACCOUNT_ENDPOINT: &str = "ws/v2";
+use actix_codec::Framed;
+use awc::{
+    ws::{Codec, Frame, Message},
+    BoxedSocket, Client, ClientResponse,
+};
+use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
+use serde_json::from_slice;
+use tokio::sync::mpsc;
+use libdeflater::Decompressor;
 
-enum WebsocketAPI {
-    Default,
-    MBP,
-    Account,
-    Custom(String),
+
+pub struct WebSockets<WE: serde::de::DeserializeOwned> {
+    pub socket: Option<(ClientResponse, Framed<BoxedSocket, Codec>)>,
+    sender: mpsc::Sender<WE>,
+    conf: Config,
 }
 
-impl WebsocketAPI {
-    fn params(self, subscription: &str) -> String {
-        match self {
-            WebsocketAPI::Default => {
-                format!("{}/{}/{}", WS_BASE, WS_ENDPOINT, subscription)
-            }
-            WebsocketAPI::MBP => {
-                format!("{}/{}/{}", WS_BASE, MBP_ENDPOINT, subscription)
-            }
-            WebsocketAPI::Account => {
-                format!("{}/{}/{}", WS_BASE, ACCOUNT_ENDPOINT, subscription)
-            }
-            WebsocketAPI::Custom(url) => url,
-        }
+impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
+    /// New websocket holder with default configuration
+    /// # Examples
+    /// see examples/binance_WebSockets.rs
+    pub fn new(sender: mpsc::Sender<WE>) -> WebSockets<WE> {
+        Self::new_with_options(sender, Config::default())
     }
-}
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum WebsocketEvent {
-    Ping(Box<Ping>),
-    SubResponse(Box<SubResponseEvent>),
-    UnSubResponse(Box<UnSubResponseEvent>),
-    Kline(Box<KlineEvent>),
-    Ticker(Box<TickerEvent>),
-}
-
-pub struct WebSockets {
-    pub socket: Option<(WebSocketStream<MaybeTlsStream<TcpStream>>, Response)>,
-    pub sender: Sender<WebsocketEvent>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-enum Events {
-    KlineEvent(KlineEvent),
-    TickerEvent(TickerEvent),
-}
-
-impl WebSockets {
-    pub fn new(sender: Sender<WebsocketEvent>) -> Self {
+    /// New websocket holder with provided configuration
+    /// # Examples
+    /// see examples/binance_WebSockets.rs
+    pub fn new_with_options(sender: mpsc::Sender<WE>, conf: Config) -> WebSockets<WE> {
         WebSockets {
             socket: None,
             sender: sender,
+            conf,
         }
     }
 
-    pub async fn connect(&mut self, subscription: &str) -> Result<()> {
-        self.connect_wss(WebsocketAPI::Default.params(subscription))
-            .await
-    }
+    /// Connect to a websocket endpoint
+    pub async fn connect(&mut self, endpoint: &str) -> Result<()> {
+        let wss: String = format!(
+            "{}/{}",
+            self.conf.ws_endpoint, endpoint
+        );
 
-    pub async fn connect_with_config(&mut self, subscription: &str, config: Config) -> Result<()> {
-        self.connect_wss(WebsocketAPI::Custom(config.ws_endpoint.clone()).params(subscription))
-            .await
-    }
+        let client = Client::builder()
+            .max_http_version(awc::http::Version::HTTP_11)
+            .finish();
 
-    async fn connect_wss(&mut self, wss: String) -> Result<()> {
-        let url = Url::parse(&wss)?;
-        match connect_async(url).await {
+        match client.ws(wss).connect().await {
             Ok(answer) => {
                 self.socket = Some(answer);
                 Ok(())
@@ -96,57 +63,77 @@ impl WebSockets {
         }
     }
 
+    pub async fn subscribe_request(&mut self, request: &str) -> Result<()> {
+        if let Some((_, ref mut socket)) = self.socket {
+            socket.send(Message::Text(request.into())).await?;
+            Ok(())
+        } else {
+            Err(Error::Msg("Not able to send requests".to_string()))
+        }
+    }
+
+    /// Disconnect from the endpoint
     pub async fn disconnect(&mut self) -> Result<()> {
-        if let Some(ref mut socket) = self.socket {
-            socket.0.close(None).await?;
-            return Ok(());
+        if let Some((_, ref mut socket)) = self.socket {
+            socket.close().await?;
+            Ok(())
+        } else {
+            Err(Error::Msg("Not able to close the connection".to_string()))
         }
-        Err(Error::Msg("Not able to close the connection".to_string()))
     }
 
-    pub async fn test_handle_msg(&mut self, msg: &str) -> Result<()> {
-        self.handle_msg(msg).await
-    }
-
-    #[async_recursion]
-    async fn handle_msg<'a>(&mut self, msg: &'a str) -> Result<()> {
-        let value: serde_json::Value = serde_json::from_str(msg)?;
-
-        if let Some(data) = value.get("tick") {
-            self.handle_msg(&data.to_string()).await?;
-            return Ok(());
-        }
-
-        if let Ok(events) = serde_json::from_value::<Events>(value) {
-            let action = match events {
-                Events::KlineEvent(v) => WebsocketEvent::Kline(Box::new(v)),
-                Events::TickerEvent(v) => WebsocketEvent::Ticker(Box::new(v)),
-            };
-            self.sender.send(action).await.unwrap();
-        }
-        Ok(())
+    pub fn socket(&self) -> &Option<(ClientResponse, Framed<BoxedSocket, Codec>)> {
+        &self.socket
     }
 
     pub async fn event_loop(&mut self, running: &AtomicBool) -> Result<()> {
         while running.load(Ordering::Relaxed) {
-            if let Some(ref mut socket) = self.socket {
-                let message = socket.0.next().await.unwrap()?;
+            if let Some((_, ref mut socket)) = self.socket {
+                let message = socket.next().await.unwrap()?;
+                debug!("event_loop message - {:?}", message);
                 match message {
-                    Message::Text(msg) => {
-                        if let Err(e) = self.handle_msg(&msg).await {
-                            return Err(Error::Msg(format!(
-                                "Error on handling stream message: {}",
-                                e
-                            )));
+                    Frame::Binary(msg) => {
+                        if msg.is_empty() {
+                            return Ok(());
+                        }
+                    
+                        let msg = huobi_decompress(msg.to_vec()).unwrap();
+
+                        if let Ok(event ) = from_slice(&msg) {
+                            if let Err(_e) = self.sender.send(event).await {
+                                println!("SendError<WE>");
+                            }
+                        } else if let Ok(response) = from_slice::<SubResponseEvent>(&msg) {
+                            println!("SubResponse: {:?}", response);
+                        } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {                
+                            socket.send(Message::Text(from_utf8(&msg)?.replace("i", "o").into())).await?;
+                        } else {
+                            return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
                         }
                     }
-                    Message::Ping(_) | Message::Pong(_) | Message::Binary(_) => (),
-                    Message::Close(e) => {
+                    Frame::Ping(_) | Frame::Pong(_) | Frame::Text(_) | Frame::Continuation(_) => {
+                    }
+                    Frame::Close(e) => {
                         return Err(Error::Msg(format!("Disconnected {:?}", e)));
                     }
                 }
             }
+            actix_rt::task::yield_now().await;
         }
         Ok(())
     }
+}
+
+fn huobi_decompress(msg: Vec<u8>) -> Result<Vec<u8>> {
+    let isize_start = msg.len() - 4;
+    let isize_bytes = &msg[isize_start..];
+    let mut ret: u32 = isize_bytes[0] as u32;
+    ret |= (isize_bytes[1] as u32) << 8;
+    ret |= (isize_bytes[2] as u32) << 16;
+    ret |= (isize_bytes[3] as u32) << 26;
+
+    let mut decompressor = Decompressor::new();
+    let mut outbuf = vec![0; ret as usize];
+    decompressor.gzip_decompress(&msg, &mut outbuf).unwrap();
+    Ok(outbuf)
 }

@@ -45,3 +45,4 @@ pub struct Status {
     pub indicator: String,
     pub description: String,
 }
+

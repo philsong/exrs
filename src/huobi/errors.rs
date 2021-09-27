@@ -3,7 +3,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use thiserror::Error;
 
-use super::websockets::WebsocketEvent;
+use super::ws_model::WebsocketEvent;
 
 #[derive(Debug, Clone, Deserialize, Error)]
 #[error("code: {code}, msg: {msg}")]
@@ -36,7 +36,7 @@ pub enum Error {
     #[error(transparent)]
     Qs(#[from] serde_qs::Error),
     #[error(transparent)]
-    Tungstenite(#[from] tokio_tungstenite::tungstenite::Error),
+    WsProtocolError(#[from] awc::error::WsProtocolError),
     #[error(transparent)]
     SendError(tokio::sync::mpsc::error::SendError<WebsocketEvent>),
     #[error(transparent)]

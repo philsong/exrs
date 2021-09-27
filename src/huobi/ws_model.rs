@@ -1,3 +1,13 @@
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum WebsocketEvent {
+    BBO(Box<BBOEvent>),
+    Kline(Box<KlineEvent>),
+    Ticker(Box<TickerEvent>),
+}
+
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Ping {
     ping: u64,
@@ -48,8 +58,6 @@ pub struct UnSubResponseEvent {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct KlineEvent {
-    #[serde(rename = "ch")]
-    pub channel: String,
     #[serde(rename = "ts")]
     pub timestamp: u64,
     pub tick: Kline,
@@ -76,10 +84,8 @@ pub struct Kline {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TickerEvent {
-    #[serde(rename = "ch")]
-    pub ch: String,
     #[serde(rename = "ts")]
-    pub ts: u64,
+    pub timestamp: u64,
     pub tick: Ticker,
 }
 
@@ -111,6 +117,32 @@ pub struct Ticker {
     pub last_price: f64,
     #[serde(with = "string_or_float")]
     pub last_size: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BBOEvent {
+    // #[serde(rename = "ch")]
+    // pub channel: String,
+    #[serde(rename = "ts")]
+    pub timestamp: u64,
+    pub tick: BBO,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BBO {
+    pub symbol: String,
+    pub seq_id: u64,
+    #[serde(with = "string_or_float")]
+    pub ask: f64,
+    #[serde(with = "string_or_float")]
+    pub ask_size: f64,
+    #[serde(with = "string_or_float")]
+    pub bid: f64,
+    #[serde(with = "string_or_float")]
+    pub bid_size: f64,
+    pub quote_time: u64,
 }
 
 pub(crate) mod string_or_float {
