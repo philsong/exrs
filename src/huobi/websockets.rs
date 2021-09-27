@@ -105,7 +105,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                             }
                         } else if let Ok(response) = from_slice::<SubResponseEvent>(&msg) {
                             println!("SubResponse: {:?}", response);
-                        } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {                
+                        } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {
                             socket.send(Message::Text(from_utf8(&msg)?.replace("i", "o").into())).await?;
                         } else {
                             return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
