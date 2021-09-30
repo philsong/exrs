@@ -1,15 +1,15 @@
 use exrs::binance_f::api::*;
 use exrs::binance_f::userstream::*;
 use exrs::binance_f::websockets::*;
-use exrs::binance_f::ws_model::FuturesWebsocketEvent;
+use exrs::binance_f::ws_model::{FuturesWebsocketEvent, BookTickerEvent};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 #[actix_rt::main]
 async fn main() {
     //user_stream().await;
-    user_stream_websocket().await;
+    //user_stream_websocket().await;
     //market_websocket().await;
-    //bookticker_websocket().await;
+    bookticker_websocket().await;
     //all_trades_websocket().await;
 }
 
@@ -107,20 +107,32 @@ async fn market_websocket() {
 #[allow(dead_code)]
 async fn bookticker_websocket() {
     let keep_running = AtomicBool::new(true);
-    let kline: String = "btcusdt@bookTicker".to_string();
+    let bookticker: String = "ethusdt@bookTicker".to_string();
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
-    let mut web_socket: FuturesWebSockets<FuturesWebsocketEvent> = FuturesWebSockets::new(tx);
+    let mut web_socket: FuturesWebSockets<BookTickerEvent> = FuturesWebSockets::new(tx);
 
     let arbiter = actix_rt::Arbiter::new();
     arbiter.spawn(async move {
+
+        let mut count: usize = 0;
+        let mut len: usize = 0;
+        let mut pre = 0;
+
         loop {
             let msg = rx.recv().await.unwrap();
-            println!("{:?}", msg);
+            count += 1;
+
+            if msg.transaction_time / 1000 > pre {
+                pre = msg.transaction_time / 1000;
+                len += 1;
+                println!("mean: {}", count as f64 / len as f64)
+            }
+
             actix_rt::task::yield_now().await;
         }
     });
 
-    web_socket.connect(&kline).await.unwrap(); // check error
+    web_socket.connect(&bookticker).await.unwrap(); // check error
     if let Err(e) = web_socket.event_loop(&keep_running).await {
         println!("Error: {}", e);
     }
