@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use chrono::Utc;
 use serde_json::Value;
 
-use crate::binance_f::errors::*;
+use super::errors::*;
 
 pub type HashMap<K, V> = hashbrown::HashMap<K, V, fxhash::FxBuildHasher>;
 pub type HashSet<V> = hashbrown::HashSet<V, fxhash::FxBuildHasher>;

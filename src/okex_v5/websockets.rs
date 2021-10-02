@@ -1,3 +1,4 @@
+use super::config;
 use super::config::*;
 use super::errors::*;
 
@@ -13,54 +14,20 @@ use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
 use serde_json::from_slice;
 use tokio::sync::mpsc;
 
-pub static STREAM_ENDPOINT: &str = "stream";
-pub static WS_ENDPOINT: &str = "ws";
-pub static OUTBOUND_ACCOUNT_INFO: &str = "outboundAccountInfo";
-pub static OUTBOUND_ACCOUNT_POSITION: &str = "outboundAccountPosition";
-pub static EXECUTION_REPORT: &str = "executionReport";
-pub static KLINE: &str = "kline";
-pub static AGGREGATED_TRADE: &str = "aggTrade";
-pub static DEPTH_ORDERBOOK: &str = "depthUpdate";
-pub static PARTIAL_ORDERBOOK: &str = "lastUpdateId";
-pub static DAYTICKER: &str = "24hrTicker";
-
-pub fn all_ticker_stream() -> &'static str { "!ticker@arr" }
-
-pub fn ticker_stream(symbol: &str) -> String { format!("{}@ticker", symbol) }
-
-pub fn agg_trade_stream(symbol: &str) -> String { format!("{}@aggTrade", symbol) }
-
-pub fn trade_stream(symbol: &str) -> String { format!("{}@trade", symbol) }
-
-pub fn kline_stream(symbol: &str, interval: &str) -> String { format!("{}@kline_{}", symbol, interval) }
-
-pub fn book_ticker_stream(symbol: &str) -> String { format!("{}@bookTicker", symbol) }
-
-pub fn all_book_ticker_stream() -> &'static str { "!bookTicker" }
-
-pub fn all_mini_ticker_stream() -> &'static str { "!miniTicker@arr" }
-
-pub fn mini_ticker_stream(symbol: &str) -> String { format!("{}@miniTicker", symbol) }
-
-/// # Arguments
-///
-/// * `symbol`: the market symbol
-/// * `levels`: 5, 10 or 20
-/// * `update_speed`: 1000 or 100
-pub fn partial_book_depth_stream(symbol: &str, levels: u16, update_speed: u16) -> String {
-    format!("{}@depth{}@{}ms", symbol, levels, update_speed)
+pub enum WebsocketAPI {
+    Public,
+    Private,
+    Custom(String),
 }
 
-/// # Arguments
-///
-/// * `symbol`: the market symbol
-/// * `update_speed`: 1000 or 100
-pub fn diff_book_depth_stream(symbol: &str, update_speed: u16) -> String {
-    format!("{}@depth@{}ms", symbol, update_speed)
-}
-
-fn combined_stream(streams: Vec<String>) -> String {
-    streams.join("/")
+impl WebsocketAPI {
+    fn params(self, config: Config) -> String {
+        match self {
+            WebsocketAPI::Public => config.ws_public,
+            WebsocketAPI::Private => config.ws_private,
+            WebsocketAPI::Custom(url) => url,
+        }
+    }
 }
 
 pub struct WebSockets<WE: serde::de::DeserializeOwned> {
@@ -88,12 +55,15 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         }
     }
 
-    /// Connect to a websocket endpoint
-    pub async fn connect(&mut self, endpoint: &str) -> Result<()> {
-        let wss: String = format!(
-            "{}/{}/{}",
-            self.conf.ws_endpoint, WS_ENDPOINT, endpoint
-        );
+    pub async fn connect_public(&mut self, config: Config) -> Result<()> {
+        self.connect_wss(WebsocketAPI::Public.params(config)).await
+    }
+
+    pub async fn connect_private(&mut self, config: Config) -> Result<()> {
+        self.connect_wss(WebsocketAPI::Private.params(config)).await
+    }
+
+    pub async fn connect_wss(&mut self, wss: String) -> Result<()> {
 
         let client = Client::builder()
             .max_http_version(awc::http::Version::HTTP_11)
@@ -148,5 +118,26 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
             }
         }
         Ok(())
+    }
+
+    // trade start from here
+    pub async fn place_order() {
+
+    }
+
+    pub async fn place_multiple_orders() {
+
+    }
+
+    pub async fn cancel_order() {
+
+    }
+
+    pub async fn amend_order() {
+
+    }
+
+    pub async fn amend_multiple_order() {
+
     }
 }
