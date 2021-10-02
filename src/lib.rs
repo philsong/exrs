@@ -7,6 +7,7 @@ extern crate serde_qs as qs;
 pub mod binance;
 pub mod binance_f;
 pub mod huobi;
+pub mod okex_v5;
 
 #[cfg(test)]
 mod tests {
