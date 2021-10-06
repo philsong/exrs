@@ -3,8 +3,6 @@
 pub enum WebsocketEvent {
     Instruments(Box<InstrumentsEvent>),
     Ticker(Box<TickerEvent>),
-    
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
