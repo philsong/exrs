@@ -12,6 +12,7 @@ actix-rt = "2.2.0"
 async-recursion = "0.3.2"
 awc = { version = "3.0.0-beta.8", features = ["rustls"] }
 base64 = "0.13.0"
+bytes = "1.1.0"
 chrono = "0.4.19"
 csv = "1.1.6"
 env_logger = "0.9.0"

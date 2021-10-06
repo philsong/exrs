@@ -1,6 +1,7 @@
 use super::config::*;
 use super::errors::*;
 
+use awc::ws::Message;
 use log::debug;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -9,6 +10,7 @@ use awc::{
     ws::{Codec, Frame},
     BoxedSocket, Client, ClientResponse,
 };
+use bytes::Bytes;
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
 use serde_json::from_slice;
 use tokio::sync::mpsc;
@@ -138,7 +140,10 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                             println!("SendError<WE>");
                         }
                     }
-                    Frame::Ping(_) | Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {
+                    Frame::Ping(_) => {
+                        socket.send(Message::Pong(Bytes::from_static(b""))).await?;
+                    }
+                    Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {
                     }
                     Frame::Close(e) => {
                         return Err(Error::Msg(format!("Disconnected {:?}", e)));
