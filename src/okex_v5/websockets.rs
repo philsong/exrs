@@ -1,7 +1,8 @@
 use super::config;
 use super::config::*;
 use super::errors::*;
-use super::rest_model::{OrderType, string_or_bool, string_or_float, string_or_float_opt};
+use super::rest_model::OrderType;
+use super::ws_model::SubscriptionResponse;
 
 use awc::ws::Message;
 use log::debug;
@@ -17,22 +18,6 @@ use serde::{Serialize, Deserialize};
 use serde_json::from_slice;
 use tokio::sync::mpsc;
 use uuid::Uuid;
-
-pub enum WebsocketAPI {
-    Public,
-    Private,
-    Custom(String),
-}
-
-impl WebsocketAPI {
-    fn params(self, config: Config) -> String {
-        match self {
-            WebsocketAPI::Public => config.ws_public,
-            WebsocketAPI::Private => config.ws_private,
-            WebsocketAPI::Custom(url) => url,
-        }
-    }
-}
 
 pub struct WebSockets<WE: serde::de::DeserializeOwned> {
     pub socket: Option<(ClientResponse, Framed<BoxedSocket, Codec>)>,
@@ -59,15 +44,12 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         }
     }
 
-    pub async fn connect_public(&mut self, config: Config) -> Result<()> {
-        self.connect_wss(WebsocketAPI::Public.params(config)).await
-    }
-
-    pub async fn connect_private(&mut self, config: Config) -> Result<()> {
-        self.connect_wss(WebsocketAPI::Private.params(config)).await
-    }
-
-    pub async fn connect_wss(&mut self, wss: String) -> Result<()> {
+    /// Connect to a websocket endpoint
+    pub async fn connect(&mut self, endpoint: &str) -> Result<()> {
+        let wss: String = format!(
+            "{}/{}",
+            self.conf.ws_endpoint, endpoint
+        );
 
         let client = Client::builder()
             .max_http_version(awc::http::Version::HTTP_11)
@@ -79,6 +61,15 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                 Ok(())
             }
             Err(e) => Err(Error::Msg(format!("Error during handshake {}", e))),
+        }
+    }
+
+    pub async fn subscribe_request(&mut self, request: &str) -> Result<()> {
+        if let Some((_, ref mut socket)) = self.socket {
+            socket.send(Message::Text(request.into())).await?;
+            Ok(())
+        } else {
+            Err(Error::Msg("Not able to send requests".to_string()))
         }
     }
 
@@ -106,10 +97,14 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         if msg.is_empty() {
                             return Ok(());
                         }
-                        let event: WE = from_slice(&msg)?;
-
-                        if let Err(_e) = self.sender.send(event).await {
-                            println!("SendError<WE>");
+                        if let Ok(event ) = from_slice(&msg) {
+                            if let Err(_e) = self.sender.send(event).await {
+                                println!("SendError<WE>");
+                            }
+                        } else if let Ok(response) = from_slice::<SubscriptionResponse>(&msg) {
+                            println!("SubscriptionResponse: {:?}", response);
+                        } else {
+                            return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
                         }
                     }
                     Frame::Ping(_) | Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {

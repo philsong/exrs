@@ -1,3 +1,4 @@
+use env_logger::Builder;
 use exrs::binance_f::api::*;
 use exrs::binance_f::userstream::*;
 use exrs::binance_f::websockets::*;
@@ -6,6 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 #[actix_rt::main]
 async fn main() {
+    Builder::new().parse_default_env().init();
     //user_stream().await;
     //user_stream_websocket().await;
     //market_websocket().await;
@@ -49,6 +51,14 @@ async fn user_stream_websocket() {
 
         let mut web_socket: FuturesWebSockets<FuturesWebsocketEvent> = FuturesWebSockets::new(tx);
 
+        actix_rt::spawn(async move {
+            loop {
+                let msg = rx.recv().await.unwrap();
+                println!("msg - {:?}", msg);
+                actix_rt::task::yield_now().await;
+            }
+        });
+
         web_socket.connect(&listen_key).await.unwrap(); // check error
         if let Err(e) = web_socket.event_loop(&keep_running).await {
             println!("Error: {}", e);
@@ -59,12 +69,8 @@ async fn user_stream_websocket() {
     } else {
         println!("Not able to start an User Stream (Check your API_KEY)");
     }
-
-    loop {
-        let msg = rx.recv().await.unwrap();
-        println!("msg - {:?}", msg);
-    }
 }
+
 
 #[allow(dead_code)]
 async fn market_websocket() {
@@ -73,8 +79,7 @@ async fn market_websocket() {
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
     let mut web_socket: FuturesWebSockets<FuturesWebsocketEvent> = FuturesWebSockets::new(tx);
 
-    let arbiter = actix_rt::Arbiter::new();
-    arbiter.spawn(async move {
+    actix_rt::spawn(async move {
         loop {
             let event = rx.recv().await.unwrap();
             match event {
@@ -111,9 +116,7 @@ async fn bookticker_websocket() {
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
     let mut web_socket: FuturesWebSockets<BookTickerEvent> = FuturesWebSockets::new(tx);
 
-    let arbiter = actix_rt::Arbiter::new();
-    arbiter.spawn(async move {
-
+    actix_rt::spawn(async move {
         let mut count: usize = 0;
         let mut len: usize = 0;
         let mut pre = 0;
@@ -147,8 +150,7 @@ async fn all_trades_websocket() {
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
     let mut web_socket: FuturesWebSockets<Vec<FuturesWebsocketEvent>> = FuturesWebSockets::new(tx);
 
-    let arbiter = actix_rt::Arbiter::new();
-    arbiter.spawn(async move {
+    actix_rt::spawn(async move {
         loop {
             let events = rx.recv().await.unwrap();
 

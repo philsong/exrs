@@ -1,8 +1,7 @@
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
     pub rest_api_endpoint: String,
-    pub ws_public: String,
-    pub ws_private: String,
+    pub ws_endpoint: String,
 }
 
 impl Config {
@@ -15,9 +14,8 @@ impl Config {
     /// ```
     pub fn default() -> Config {
         Config {
-            rest_api_endpoint: "https://www.okex.com/".into(),
-            ws_public: "wss://ws.okex.com:8443/ws/v5/public".into(),
-            ws_private: "wss://ws.okex.com:8443/ws/v5/public".into(),
+            rest_api_endpoint: "https://www.okex.com".into(),
+            ws_endpoint: "wss://ws.okex.com:8443/ws/v5".into(),
         }
     }
 
@@ -29,9 +27,9 @@ impl Config {
     /// ```
     pub fn testnet() -> Config {
         Config::default()
-            .set_rest_api_endpoint("https://www.okex.com/")
+            .set_rest_api_endpoint("https://www.okex.com")
             .set_ws_public("wss://wspap.okex.com:8443/ws/v5/public?brokerId=9999")
-            .set_ws_private("wss://wspap.okex.com:8443/ws/v5/public?brokerId=9999")
+            .set_ws_private("wss://wspap.okex.com:8443/ws/v5/private?brokerId=9999")
     }
 
     pub fn set_rest_api_endpoint<T: Into<String>>(mut self, rest_api_endpoint: T) -> Self {
@@ -40,12 +38,12 @@ impl Config {
     }
 
     pub fn set_ws_public<T: Into<String>>(mut self, ws_endpoint: T) -> Self {
-        self.ws_public = ws_endpoint.into();
+        self.ws_endpoint = ws_endpoint.into();
         self
     }
     
     pub fn set_ws_private<T: Into<String>>(mut self, ws_endpoint: T) -> Self {
-        self.ws_private = ws_endpoint.into();
+        self.ws_endpoint = ws_endpoint.into();
         self
     }
 }

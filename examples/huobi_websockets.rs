@@ -1,3 +1,4 @@
+use env_logger::Builder;
 use exrs::huobi::api::*;
 use exrs::huobi::userstream::*;
 use exrs::huobi::websockets::*;
@@ -7,6 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 #[actix_rt::main]
 async fn main() {
+    Builder::new().parse_default_env().init();
     //user_stream().await;
     //user_stream_websocket().await;
     //market_websocket().await;
