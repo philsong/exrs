@@ -2,6 +2,8 @@ use serde::Serializer;
 use std::collections::BTreeMap;
 use std::fmt;
 
+use crate::binance::account::OrderRequest;
+
 use super::client::Client;
 use super::errors::*;
 // use super::rest_model::CancelAllOpenOrdersResponse;
@@ -14,8 +16,57 @@ use super::errors::*;
 // use super::rest_model::{PairAndWindowQuery, PairQuery};
 use super::util::*;
 
+// trade
+static API_V5_ORDER: &str = "/api/v5/trade/order";
+static API_V5_BATCH_ORDERS: &str = "/api/v5/trade/batch-orders";
+static API_V5_CANCEL_ORDER: &str = "/api/v5/trade/cancel-order";
+static API_V5_CANCEL_BATCH_ORDERS: &str = "/api/v5/trade/cancel-batch-orders";
+static API_V5_AMEND_ORDER: &str = "/api/v5/trade/amend-order";
+static API_V5_AMEND_BATCH_ORDERS: &str = "/api/v5/trade/amend-batch-orders";
+static API_V5_CLOSE_POSITION: &str = "/api/v5/trade/close-position";
+static API_V5_ORDERS_PENDING: &str = "/api/v5/trade/orders-pending";
+static API_v5_ORDERS_HISTORY: &str = "/api/v5/trade/orders-history";
+static API_V5_ORDERS_HISOTRY_ARCHIVE: &str = "/api/v5/trade/orders-history-archive";
+static API_V5_FILLS: &str = "/api/v5/trade/fills";
+static API_V5_FILLS_HISTORY: &str = "/api/v5/trade/fills-history";
+static API_V5_ORDER_ALGO: &str = "/api/v5/trade/order-algo";
+static API_V5_CANCEL_ALGOS: &str = "/api/v5/trade/cancel-algos";
+static API_V5_CANCEL_ADVANCE_ALGOS: &str = "/api/v5/trade/cancel-advance-algos";
+static API_V5_ORDERS_ALGO_PENDING: &str = "/api/v5/trade/orders-algo-pending";
+static API_V5_ORDERS_ALGO_HISTORY: &str = "/api/v5/trade/orders-algo-history";
+
+// account
+static API_V5_POSITIONS: &str = "/api/v5/account/positions";
+static API_V5_ACCOUNT_POSITION_RISK: &str = "/api/v5/account/account-position-risk";
+static API_V5_BILLS: &str = "/api/v5/account/bills";
+static API_V5_BILLS_ARCHIVE: &str = "/api/v5/account/bills-archive";
+static API_V5_ACCOUNT_CONFIG: &str = "/api/v5/account/config";
+static API_V5_SET_POSITION_MODE: &str = "/api/v5/account/set-position-mode";
+static API_V5_SET_LEVERAGE: &str = "/api/v5/account/set-leverage";
+static API_V5_MAX_SIZE: &str = "/api/v5/account/max-size";
+static API_V5_MAX_AVAIL_SIZE: &str = "/api/v5/account/max-avail-size";
+static API_V5_MARGIN_BALANCE: &str = "/api/v5/account/position/margin-balance";
+static API_V5_LEVERAGE_INFO: &str = "/api/v5/account/leverage-info";
+static API_V5_MAX_LOAN: &str = "/api/v5/account/max-loan";
+static API_V5_TRADE_FEE: &str = "/api/v5/account/trade-fee";
+static API_V5_INTEREST_ACCRUED: &str = "/api/v5/account/interest-accrued";
+static API_V5_INTEREST_RATE: &str = "/api/v5/account/interest-rate";
+static API_V5_SET_GREEKS: &str = "/api/v5/account/set-greeks";
+static API_V5_MAX_WITHDRAWAL: &str = "/api/v5/account/max-withdrawal";
+
+// todo
+// sub account
+
 #[derive(Clone)]
 pub struct Account {
     pub client: Client,
 }
 
+impl Account {
+    // async fn post_order(&self, order: OrderRequest) -> Result<Transaction> {
+    //     self.client
+    //         .post_signed_p(API_V5_ORDER, order)
+    // }
+
+
+}

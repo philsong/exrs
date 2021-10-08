@@ -26,14 +26,7 @@ where
     Ok(qs::to_string(&payload)?)
 }
 
-pub fn build_signed_request(
-    mut parameters: BTreeMap<String, String>,
-    recv_window: u64,
-) -> Result<String> {
-    if recv_window > 0 {
-        parameters.insert("recvWindow".into(), recv_window.to_string());
-    }
-
+pub fn build_signed_request(mut parameters: BTreeMap<String, String>) -> Result<String> {
     if let Ok(timestamp) = get_timestamp() {
         parameters.insert("timestamp".into(), timestamp.to_string());
 
@@ -50,16 +43,12 @@ pub fn build_signed_request(
     }
 }
 
-pub fn build_signed_request_p<S>(payload: S, recv_window: u64) -> Result<String>
+pub fn build_signed_request_p<S>(payload: S) -> Result<String>
 where
     S: serde::Serialize,
 {
     let query_string = qs::to_string(&payload)?;
     let mut parameters: BTreeMap<String, String> = BTreeMap::new();
-
-    if recv_window > 0 {
-        parameters.insert("recvWindow".into(), recv_window.to_string());
-    }
 
     if let Ok(timestamp) = get_timestamp() {
         parameters.insert("timestamp".into(), timestamp.to_string());
