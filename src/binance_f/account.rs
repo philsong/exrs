@@ -14,6 +14,15 @@ use super::rest_model::{OrderSide, TimeInForce};
 use super::rest_model::{PairAndWindowQuery, PairQuery};
 use super::util::*;
 
+static FAPI_ORDER: &str = "/fapi/v1/order";
+static FAPI_OPEN_ORDERS: &str = "/fapi/v2/openOrders";
+static FAPI_ALL_OPEN_ORDERS: &str = "/fapi/v1/allOpenOrders";
+static FAPI_POSITION_RISK: &str = "/fapi/v2/positionRisk";
+static FAPI_BALANCE: &str = "/fapi/v2/balance";
+static FAPI_LEVERAGE: &str = "/fapi/v1/leverage";
+static FAPI_POSITION_SIDE_DUAL: &str = "/fapi/v1/positionSide/dual";
+static FAPI_MULTI_ASSETS_MARGIN: &str = "/fapi/v1/multiAssetsMargin";
+
 #[derive(Clone)]
 pub struct FuturesAccount {
     pub client: Client,
@@ -130,7 +139,7 @@ struct BatchOrdersRequest {
 impl FuturesAccount {
     async fn post_order(&self, order: OrderRequest) -> Result<Transaction> {
         self.client
-            .post_signed_p("/fapi/v1/order", order, self.recv_window)
+            .post_signed_p(FAPI_ORDER, order, self.recv_window)
             .await
     }
 
@@ -241,7 +250,7 @@ impl FuturesAccount {
     pub async fn cancel_order(&self, o: OrderCancellation) -> Result<CanceledOrder> {
         let recv_window = o.recv_window.unwrap_or(self.recv_window);
         self.client
-            .delete_signed_p("/fapi/v1/order", &o, recv_window)
+            .delete_signed_p(FAPI_ORDER, &o, recv_window)
             .await
     }
 
@@ -251,7 +260,7 @@ impl FuturesAccount {
     {
         self.client
             .get_signed_p(
-                "/fapi/v2/positionRisk",
+                FAPI_POSITION_RISK,
                 Some(PairAndWindowQuery {
                     symbol: symbol.into(),
                     recv_window: self.recv_window,
@@ -265,7 +274,7 @@ impl FuturesAccount {
         let parameters = BTreeMap::new();
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .get_signed_d("/fapi/v2/balance", request.as_str())
+            .get_signed_d(FAPI_BALANCE, request.as_str())
             .await
     }
 
@@ -283,14 +292,14 @@ impl FuturesAccount {
 
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .post_signed_d("/fapi/v1/leverage", request.as_str())
+            .post_signed_d(FAPI_LEVERAGE, request.as_str())
             .await
     }
 
     pub async fn change_position_mode(&self, dual_side_position: bool) -> Result<()> {
         self.client
             .post_signed_p(
-                "/fapi/v1/positionSide/dual",
+                FAPI_POSITION_SIDE_DUAL,
                 ChangePositionModeRequest { dual_side_position },
                 self.recv_window,
             )
@@ -304,7 +313,7 @@ impl FuturesAccount {
     {
         self.client
             .delete_signed_p(
-                "/fapi/v1/allOpenOrders",
+                FAPI_ALL_OPEN_ORDERS,
                 PairQuery {
                     symbol: symbol.into(),
                 },
@@ -319,7 +328,7 @@ impl FuturesAccount {
     {
         self.client
             .get_signed_p(
-                "/fapi/v2/openOrders",
+                FAPI_OPEN_ORDERS,
                 Some(PairAndWindowQuery {
                     symbol: symbol.into(),
                     recv_window: self.recv_window,
@@ -333,7 +342,7 @@ impl FuturesAccount {
         let parameters = BTreeMap::new();
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .get_signed_d("/fapi/v2/positionSide/dual", request.as_str())
+            .get_signed_d(FAPI_MULTI_ASSETS_MARGIN, request.as_str())
             .await
     }
 
@@ -341,7 +350,7 @@ impl FuturesAccount {
         let parameters: BTreeMap<String, String> = BTreeMap::new();
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .get_signed_d("/fapi/v1/multiAssetsMargin", request.as_str())
+            .get_signed_d(FAPI_MULTI_ASSETS_MARGIN, request.as_str())
             .await
     }
 
@@ -353,7 +362,7 @@ impl FuturesAccount {
         parameters.insert("multiAssetsMargin".into(), mutl_assets_margin.into());
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .post_signed_d("/fapi/v1/multiAssetsMargin", request.as_str())
+            .post_signed_d(FAPI_MULTI_ASSETS_MARGIN, request.as_str())
             .await?;
         Ok(())
     }
