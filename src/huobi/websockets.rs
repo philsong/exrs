@@ -1,7 +1,6 @@
-use crate::huobi::ws_model::SubResponseEvent;
-
 use super::config::*;
 use super::errors::*;
+use super::ws_model::WebsocketResponse;
 
 use log::debug;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -103,8 +102,8 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                             if let Err(_e) = self.sender.send(event).await {
                                 println!("SendError<WE>");
                             }
-                        } else if let Ok(response) = from_slice::<SubResponseEvent>(&msg) {
-                            println!("SubResponse: {:?}", response);
+                        } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
+                            println!("WebsocketResponse: {:?}", response);
                         } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {
                             socket.send(Message::Text(from_utf8(&msg)?.replace("i", "o").into())).await?;
                         } else {

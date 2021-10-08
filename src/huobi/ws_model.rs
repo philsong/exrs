@@ -9,6 +9,13 @@ pub enum WebsocketEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum WebsocketResponse {
+    Subscription(SubResponse),
+    Unsubscription(UnSubResponse),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Ping {
     ping: u64,
 }
@@ -39,7 +46,7 @@ pub struct UnSubRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SubResponseEvent {
+pub struct SubResponse {
     id: String,
     status: String,
     subbed: String,
@@ -48,7 +55,7 @@ pub struct SubResponseEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct UnSubResponseEvent {
+pub struct UnSubResponse {
     id: String,
     status: String,
     unsubbed: String,

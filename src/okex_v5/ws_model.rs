@@ -15,6 +15,15 @@ pub enum WebsocketEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum WebsocketResponse {
+    Login(LoginResponse),
+    Subscription(SubscriptionResponse),
+    FailureSubscription(FailureSubscriptionResponse),
+    Unsubscription(UnsubscriptionResponse),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LoginRequest {
     pub op: String,
     pub args: Vec<LoginConfig>

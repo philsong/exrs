@@ -1,8 +1,7 @@
-use super::config;
 use super::config::*;
 use super::errors::*;
 use super::rest_model::OrderType;
-use super::ws_model::SubscriptionResponse;
+use super::ws_model::WebsocketResponse;
 
 use awc::ws::Message;
 use log::debug;
@@ -101,8 +100,8 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                             if let Err(_e) = self.sender.send(event).await {
                                 println!("SendError<WE>");
                             }
-                        } else if let Ok(response) = from_slice::<SubscriptionResponse>(&msg) {
-                            println!("SubscriptionResponse: {:?}", response);
+                        } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
+                            println!("WebsocketResponse: {:?}", response);
                         } else {
                             return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
                         }
