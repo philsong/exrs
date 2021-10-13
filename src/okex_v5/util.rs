@@ -29,7 +29,7 @@ where
 pub fn build_signed_request(mut parameters: BTreeMap<String, String>) -> Result<String> {
     if let Ok(timestamp) = get_timestamp() {
         parameters.insert("timestamp".into(), timestamp.to_string());
-
+        
         let mut request = String::new();
         for (key, value) in &parameters {
             let param = format!("{}={}&", key, value);

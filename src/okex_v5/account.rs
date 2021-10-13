@@ -67,6 +67,4 @@ impl Account {
     //     self.client
     //         .post_signed_p(API_V5_ORDER, order)
     // }
-
-
 }

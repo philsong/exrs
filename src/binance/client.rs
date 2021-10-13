@@ -264,6 +264,7 @@ impl Client {
     }
 }
 
+// todo! need to match the doc
 fn handle_content_error(error: BinanceContentError) -> Error {
     match (error.code, error.msg.as_ref()) {
         (-1013, error_messages::INVALID_PRICE) => Error::InvalidPrice,

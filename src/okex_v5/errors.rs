@@ -16,9 +16,9 @@ pub struct OkexContentError {
 }
 
 /// First errors are technical errors
-/// All unhandled Huobi content errors are HuobiError
-/// The rest are Huobi content errors that are properly handled
-/// Unhandled Huobi errors are Msg
+/// All unhandled Okex content errors are OkexError
+/// The rest are Okex content errors that are properly handled
+/// Unhandled Okex errors are Msg
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
@@ -44,7 +44,7 @@ pub enum Error {
     #[error(transparent)]
     UTF8Err(#[from] std::str::Utf8Error),
     #[error("{response}")]
-    HuobiError {
+    OkexError {
         #[from]
         response: OkexContentError,
     },
