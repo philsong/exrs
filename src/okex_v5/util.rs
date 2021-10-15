@@ -26,47 +26,41 @@ where
     Ok(qs::to_string(&payload)?)
 }
 
-pub fn build_signed_request(mut parameters: BTreeMap<String, String>) -> Result<String> {
-    if let Ok(timestamp) = get_timestamp() {
-        parameters.insert("timestamp".into(), timestamp.to_string());
-        
-        let mut request = String::new();
-        for (key, value) in &parameters {
-            let param = format!("{}={}&", key, value);
-            request.push_str(param.as_ref());
-        }
-        request.pop(); // remove last &
+// pub fn build_signed_request(mut parameters: BTreeMap<String, String>) -> Result<String> {
 
-        Ok(request)
-    } else {
-        Err(Error::Msg("Failed to get timestamp".to_string()))
-    }
-}
+//     let mut request = String::new();
+//     for (key, value) in &parameters {
+//         let param = format!("{}={}&", key, value);
+//         request.push_str(param.as_ref());
+//     }
+//     request.pop(); // remove last &
 
-pub fn build_signed_request_p<S>(payload: S) -> Result<String>
-where
-    S: serde::Serialize,
-{
-    let query_string = qs::to_string(&payload)?;
-    let mut parameters: BTreeMap<String, String> = BTreeMap::new();
+//     Ok(request)
 
-    if let Ok(timestamp) = get_timestamp() {
-        parameters.insert("timestamp".into(), timestamp.to_string());
+// }
 
-        let mut request = query_string;
-        for (key, value) in &parameters {
-            let param = format!("&{}={}", key, value);
-            request.push_str(param.as_ref());
-        }
-        if let Some('&') = request.chars().last() {
-            request.pop(); // remove last &
-        }
+// pub fn build_signed_request_p<S>(payload: S) -> Result<String>
+// where
+//     S: serde::Serialize,
+// {
+//     let query_string = qs::to_string(&payload)?;
+//     let mut parameters: BTreeMap<String, String> = BTreeMap::new();
 
-        Ok(request)
-    } else {
-        Err(Error::Msg("Failed to get timestamp".to_string()))
-    }
-}
+
+//     parameters.insert("timestamp".into(), timestamp.to_string());
+
+//     let mut request = query_string;
+//     for (key, value) in &parameters {
+//         let param = format!("&{}={}", key, value);
+//         request.push_str(param.as_ref());
+//     }
+//     if let Some('&') = request.chars().last() {
+//         request.pop(); // remove last &
+//     }
+
+//     Ok(request)
+
+// }
 
 pub fn to_i64(v: &Value) -> i64 {
     v.as_i64().unwrap()

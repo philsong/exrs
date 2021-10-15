@@ -1,3 +1,24 @@
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PairQuery {
+    pub symbol: String,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PositionSide {
+    Net,
+    Long,
+    Short,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum OrderSide {
+    Buy,
+    Sell,
+}
+
 /// Order type
 /// market: market order
 /// limit: limit order
@@ -16,6 +37,71 @@ pub enum OrderType {
     OptimalLimitIoc,
     #[serde(other)]
     Other,
+}
+
+/// By default, buy
+impl Default for OrderSide {
+    fn default() -> Self {
+        Self::Buy
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum TradeMode {
+    Isolated,
+    Cross,
+    Cash,
+}
+
+/// By default, Cross
+impl Default for TradeMode {
+    fn default() -> Self {
+        Self::Cross
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderRequest {
+    #[serde(rename = "inst_id")]
+    pub symbol: String,
+    #[serde(rename = "td_mode")]
+    pub trade_mode: TradeMode,
+    #[serde(rename = "ccy")]
+    pub currency: Option<String>,
+    #[serde(rename = "clOrdId")]
+    pub client_order_id: Option<String>,
+    pub tag: Option<String>,
+    pub side: OrderSide,
+    #[serde(rename = "posSide")]
+    pub position_side: Option<String>,
+    #[serde(rename = "ord_type")]
+    pub order_type: OrderType,
+    #[serde(rename = "sz", with = "string_or_float")]
+    pub qty: f64,
+    #[serde(rename = "px", with = "string_or_float_opt")]
+    pub price: Option<f64>,
+    pub reduce_only: Option<bool>,
+    #[serde(rename = "tgtCcy")]
+    pub target_currency: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionResponse {
+    pub code: String,
+    pub msg: String,
+    pub data: Vec<Transaction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Transaction {
+    pub cl_ord_id: String,
+    pub ord_id: String,
+    pub tag: String,
+    pub s_code: String,
+    pub s_msg: String,
 }
 
 pub(crate) mod string_or_float {

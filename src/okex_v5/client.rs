@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use hex::encode as hex_encode;
@@ -12,8 +13,9 @@ use serde_json::from_str;
 
 use super::errors::error_messages;
 use super::errors::*;
+use super::rest_model::PairQuery;
 // use super::rest_model::PairQuery;
-use super::util::{build_request_p, build_signed_request_p, get_timestamp};
+use super::util::{build_request_p, get_timestamp};
 
 #[derive(Clone)]
 pub struct Client {
@@ -40,13 +42,54 @@ impl Client {
         }
     }
 
+    pub async fn post_signed(&self, endpoint: &str, request: &str) -> Result<String> {
+        let url = format!("{}{}?{}", self.host, endpoint, request);
+        let response = self.inner
+            .post(url.as_str())
+            .headers(self.build_signed_headers(true, Method::POST, endpoint, request)?)
+            .send()
+            .await?;
+        self.handler(response).await
+    }
+
+    async fn handler(&self, response: Response) -> Result<String> {
+        match response.status() {
+            StatusCode::OK => {
+                let body = response.bytes().await?;
+                let result = std::str::from_utf8(&body);
+                Ok(result?.to_string())
+            }
+            StatusCode::INTERNAL_SERVER_ERROR => Err(Error::InternalServerError),
+            StatusCode::SERVICE_UNAVAILABLE => Err(Error::ServiceUnavailable),
+            StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
+            StatusCode::BAD_REQUEST => {
+                let error: OkexContentError = response.json().await?;
+                Err(handle_content_error(error))
+            }
+            s => Err(Error::Msg(format!("Received response: {:?}", s))),
+        }
+    }
+
+    pub async fn post_signed_p<T: de::DeserializeOwned, P: serde::Serialize>(
+        &self, 
+        endpoint: &str, 
+        payload: P
+    ) -> Result<T> {
+        let request = build_request_p(payload)?;
+        let string = self.post_signed(endpoint, &request).await?;
+        let data: &str = string.as_str();
+        let t = from_str(data)?;
+        Ok(t)
+    }
+
     pub async fn get_signed(&self, endpoint: &str, request: &str) -> Result<String> {
         let url = format!("{}{}?{}", self.host, endpoint, request);
-        let response = self.
+
+        let response = self
             .inner
             .clone()
             .get(url.as_str())
-            .headers(self.build_headers(true, endpoint, Method::Get, endpoint, request));
+            .headers(self.build_signed_headers(true, Method::GET, endpoint, request)?)
             .send()
             .await?;
 
@@ -58,18 +101,35 @@ impl Client {
         endpoint: &str,
         request: &str
     ) -> Result<T> {
+        let r = self.get_signed(endpoint, request).await?;
+        let t = from_str(r.as_str())?;
+        Ok(t)
+    }
+
+    // pub async fn get_signed_p<T: de::DeserializeOwned, P: serde::Serialize>(
+    //     &self, 
+    //     endpoint: &str, 
+    //     payload: Option<P>,
+    // ) -> Result<T> {
+    //     let req = if let Some(p) = payload {
+    //         p
+    //         // self.build_signed_headers_p(true, Method::GET, endpoint, p)?
+    //     } else {
+    //         let option: Option<PairQuery> = None;
+    //         // self.build_signed_headers_p(true, Method::GET, endpoint, option)?
+    //         option
+    //     };
+    //     let string = self.get_signed(endpoint, &req).await?;
+    //     let data: &str = string.as_str();
+    //     let t = from_str(data)?;
+    //     Ok(t)
+    // }
+
+    pub fn build_headers() {
         todo!();
     }
 
-    pub async fn get_signed_p<T: de::DeserializeOwned, P: serde::Serialize>(
-        &self, 
-        endpoint: &str, 
-        payload: Option<P>,
-    ) -> Result<T> {
-        todo!();
-    }
-
-    fn build_headers(&self, content_type: bool, method: Method, endpoint: &str, request: &str) -> Result<HeaderMap> {
+    pub fn build_signed_headers(&self, content_type: bool, method: Method, endpoint: &str, request: &str) -> Result<HeaderMap> {
         let mut custon_headers = HeaderMap::new();
 
         custon_headers.insert(USER_AGENT, HeaderValue::from_static("okex-rs"));
@@ -81,7 +141,8 @@ impl Client {
         }
 
         if let Ok(timestamp) = get_timestamp() {
-            let pre_hash = format!("{}{}{}{}", timestamp, method.as_str(), endpoint, request, self.secret_key);
+            let pre_hash = format!("{}{}{}?{}{}", timestamp, method.as_str(), endpoint, request, self.secret_key);
+
             let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
             let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
 
@@ -108,22 +169,48 @@ impl Client {
         Ok(custon_headers)
     }
 
-    async fn handler(&self, response: Response) -> Result<String> {
-        match response.status() {
-            StatusCode::OK => {
-                let body = response.bytes().await?;
-                let result = std::str::from_utf8(&body);
-                Ok(result?.to_string())
-            }
-            StatusCode::INTERNAL_SERVER_ERROR => Err(Error::InternalServerError),
-            StatusCode::SERVICE_UNAVAILABLE => Err(Error::ServiceUnavailable),
-            StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
-            StatusCode::BAD_REQUEST => {
-                let error: OkexContentError = response.json().await?;
-                Err(handle_content_error(error))
-            }
-            s => Err(Error::Msg(format!("Received response: {:?}", s))),
+    pub fn build_signed_headers_p<S>(&self, content_type: bool, method: Method, endpoint: &str, payload: S) -> Result<HeaderMap> 
+    where
+        S: serde::Serialize
+    {
+        let query_string = qs::to_string(&payload)?;
+        let mut custon_headers = HeaderMap::new();
+
+        custon_headers.insert(USER_AGENT, HeaderValue::from_static("okex-rs"));
+        if content_type {
+            custon_headers.insert(
+                CONTENT_TYPE,
+                HeaderValue::from_static("application/json"),
+            );
         }
+
+        if let Ok(timestamp) = get_timestamp() {
+            let pre_hash = format!("{}{}{}?{}{}", timestamp, method.as_str(), endpoint, query_string, self.secret_key);
+
+            let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
+            let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
+
+            custon_headers.insert(
+                HeaderName::from_static("OK-ACCESS-KEY"),
+                HeaderValue::from_str(self.api_key.as_str())?,
+            );
+            custon_headers.insert(
+                HeaderName::from_static("OK-ACCESS-SIGN"),
+                HeaderValue::from_str(&signature.as_str())?,
+            );
+            custon_headers.insert(
+                HeaderName::from_static("OK-ACCESS-TIMESTAMP"),
+                HeaderValue::from_str(&timestamp.to_string())?,
+            );
+            custon_headers.insert(
+                HeaderName::from_static("OK-ACCESS-PASSPHRASE"),
+                HeaderValue::from_str(self.passphrase.as_str())?,
+            );
+        } else {
+            return Err(Error::Msg("build_headers Failed to get timestamp".to_string()))
+        }
+
+        Ok(custon_headers)
     }
 }
 

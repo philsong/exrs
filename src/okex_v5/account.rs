@@ -2,10 +2,9 @@ use serde::Serializer;
 use std::collections::BTreeMap;
 use std::fmt;
 
-use crate::binance::account::OrderRequest;
-
 use super::client::Client;
 use super::errors::*;
+use super::rest_model::*;
 // use super::rest_model::CancelAllOpenOrdersResponse;
 // use super::rest_model::MultiAssetsMarginResponse;
 // use super::rest_model::PositionModeResponse;
@@ -57,14 +56,67 @@ static API_V5_MAX_WITHDRAWAL: &str = "/api/v5/account/max-withdrawal";
 // todo
 // sub account
 
+
 #[derive(Clone)]
 pub struct Account {
     pub client: Client,
 }
 
 impl Account {
-    // async fn post_order(&self, order: OrderRequest) -> Result<Transaction> {
-    //     self.client
-    //         .post_signed_p(API_V5_ORDER, order)
-    // }
+    async fn post_order(&self, order: OrderRequest) -> Result<TransactionResponse> {
+        self.client
+            .post_signed_p(API_V5_ORDER, order)
+            .await
+    }
+    
+    // Place a LIMIT order - BUY
+    pub fn limit_buy<S, F>(&self, symbol: S, qty: F, price: f64) -> Result<Transaction>
+    where
+        S: Into<String>,
+        F: Into<f64>,
+    {
+        let buy: OrderRequest = OrderRequest {
+            symbol: symbol.into(),
+            trade_mode: TradeMode::Cross,
+            currency: None,
+            client_order_id: None,
+            tag: None,
+            side: OrderSide::Buy,
+            position_side: None, // PositionSide::Long,
+            order_type: OrderType::Limit,
+            qty: qty.into(),
+            price: price.into(),
+            reduce_only: None,
+            target_currency: None,
+        };
+        let order = self.build_order(buy);
+        let request = build_request(&order)?;
+        self.client.post_signed(API_V5_ORDER, request)
+    }
+
+    fn build_order(&self, order: OrderRequest) -> BTreeMap<String, String> {
+        let mut order_parameters: BTreeMap<String, String> = BTreeMap::new();
+
+        order_parameters.insert("symbol".into(), order.symbol);
+        order_parameters.insert("side".into(), order.order_side.into());
+        order_parameters.insert("type".into(), order.order_type.into());
+        order_parameters.insert("quantity".into(), order.qty.to_string());
+
+        if let Some(stop_price) = order.stop_price {
+            order_parameters.insert("stopPrice".into(), stop_price.to_string());
+        }
+
+        if order.price != 0.0 {
+            order_parameters.insert("price".into(), order.price.to_string());
+            order_parameters.insert("timeInForce".into(), order.time_in_force.into());
+        }
+
+        if let Some(client_order_id) = order.new_client_order_id {
+            order_parameters.insert("newClientOrderId".into(), client_order_id);
+        }
+
+        order_parameters
+    }
+
+
 }
