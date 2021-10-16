@@ -14,7 +14,6 @@ use serde_json::from_str;
 use super::errors::error_messages;
 use super::errors::*;
 use super::rest_model::PairQuery;
-// use super::rest_model::PairQuery;
 use super::util::{build_request_p, get_timestamp};
 
 #[derive(Clone)]
@@ -52,23 +51,6 @@ impl Client {
         self.handler(response).await
     }
 
-    async fn handler(&self, response: Response) -> Result<String> {
-        match response.status() {
-            StatusCode::OK => {
-                let body = response.bytes().await?;
-                let result = std::str::from_utf8(&body);
-                Ok(result?.to_string())
-            }
-            StatusCode::INTERNAL_SERVER_ERROR => Err(Error::InternalServerError),
-            StatusCode::SERVICE_UNAVAILABLE => Err(Error::ServiceUnavailable),
-            StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
-            StatusCode::BAD_REQUEST => {
-                let error: OkexContentError = response.json().await?;
-                Err(handle_content_error(error))
-            }
-            s => Err(Error::Msg(format!("Received response: {:?}", s))),
-        }
-    }
 
     pub async fn post_signed_p<T: de::DeserializeOwned, P: serde::Serialize>(
         &self, 
@@ -125,8 +107,16 @@ impl Client {
     //     Ok(t)
     // }
 
-    pub fn build_headers() {
-        todo!();
+    pub fn build_headers(&self, content_type: bool) {
+        let mut custon_headers = HeaderMap::new();
+
+        custon_headers.insert(USER_AGENT, HeaderValue::from_static("okex-rs"));
+        if content_type {
+            custon_headers.insert(
+                CONTENT_TYPE,
+                HeaderValue::from_static("application/json"),
+            );
+        }
     }
 
     pub fn build_signed_headers(&self, content_type: bool, method: Method, endpoint: &str, request: &str) -> Result<HeaderMap> {
@@ -211,6 +201,24 @@ impl Client {
         }
 
         Ok(custon_headers)
+    }
+
+    async fn handler(&self, response: Response) -> Result<String> {
+        match response.status() {
+            StatusCode::OK => {
+                let body = response.bytes().await?;
+                let result = std::str::from_utf8(&body);
+                Ok(result?.to_string())
+            }
+            StatusCode::INTERNAL_SERVER_ERROR => Err(Error::InternalServerError),
+            StatusCode::SERVICE_UNAVAILABLE => Err(Error::ServiceUnavailable),
+            StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
+            StatusCode::BAD_REQUEST => {
+                let error: OkexContentError = response.json().await?;
+                Err(handle_content_error(error))
+            }
+            s => Err(Error::Msg(format!("Received response: {:?}", s))),
+        }
     }
 }
 

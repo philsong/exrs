@@ -70,12 +70,12 @@ impl Account {
     }
     
     // Place a LIMIT order - BUY
-    pub fn limit_buy<S, F>(&self, symbol: S, qty: F, price: f64) -> Result<Transaction>
+    pub async fn limit_buy<S, F>(&self, symbol: S, qty: F, price: f64) -> Result<TransactionResponse>
     where
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy: OrderRequest = OrderRequest {
+        let order: OrderRequest = OrderRequest {
             symbol: symbol.into(),
             trade_mode: TradeMode::Cross,
             currency: None,
@@ -89,34 +89,6 @@ impl Account {
             reduce_only: None,
             target_currency: None,
         };
-        let order = self.build_order(buy);
-        let request = build_request(&order)?;
-        self.client.post_signed(API_V5_ORDER, request)
+        self.post_order(order).await
     }
-
-    fn build_order(&self, order: OrderRequest) -> BTreeMap<String, String> {
-        let mut order_parameters: BTreeMap<String, String> = BTreeMap::new();
-
-        order_parameters.insert("symbol".into(), order.symbol);
-        order_parameters.insert("side".into(), order.order_side.into());
-        order_parameters.insert("type".into(), order.order_type.into());
-        order_parameters.insert("quantity".into(), order.qty.to_string());
-
-        if let Some(stop_price) = order.stop_price {
-            order_parameters.insert("stopPrice".into(), stop_price.to_string());
-        }
-
-        if order.price != 0.0 {
-            order_parameters.insert("price".into(), order.price.to_string());
-            order_parameters.insert("timeInForce".into(), order.time_in_force.into());
-        }
-
-        if let Some(client_order_id) = order.new_client_order_id {
-            order_parameters.insert("newClientOrderId".into(), client_order_id);
-        }
-
-        order_parameters
-    }
-
-
 }
