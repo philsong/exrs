@@ -4,7 +4,7 @@ pub struct PairQuery {
     pub symbol: String,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum PositionSide {
     Net,
@@ -68,22 +68,24 @@ pub struct OrderRequest {
     pub symbol: String,
     #[serde(rename = "td_mode")]
     pub trade_mode: TradeMode,
-    #[serde(rename = "ccy")]
+    #[serde(rename = "ccy", skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
-    #[serde(rename = "clOrdId")]
+    #[serde(rename = "clOrdId", skip_serializing_if = "Option::is_none")]
     pub client_order_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
     pub side: OrderSide,
-    #[serde(rename = "posSide")]
-    pub position_side: Option<String>,
+    #[serde(rename = "posSide", skip_serializing_if = "Option::is_none")]
+    pub position_side: Option<PositionSide>,
     #[serde(rename = "ord_type")]
     pub order_type: OrderType,
     #[serde(rename = "sz", with = "string_or_float")]
     pub qty: f64,
-    #[serde(rename = "px", with = "string_or_float_opt")]
+    #[serde(rename = "px", with = "string_or_float_opt", skip_serializing_if = "Option::is_none")]
     pub price: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reduce_only: Option<bool>,
-    #[serde(rename = "tgtCcy")]
+    #[serde(rename = "tgtCcy", skip_serializing_if = "Option::is_none")]
     pub target_currency: Option<String>,
 }
 

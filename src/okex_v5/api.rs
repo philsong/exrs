@@ -17,7 +17,7 @@ pub trait Okex: Sized {
     fn new_with_env(config: &Config) -> Self {
         let api_key = std::env::var("OKEX_API_KEY").ok();
         let secret = std::env::var("OKEX_API_SECRET_KEY").ok();
-        let passphrase = std::env::var("OKEX_API_SECRET_KEY").ok();
+        let passphrase = std::env::var("OKEX_API_PASSPHRASE").ok();
         Self::new_with_config(api_key, secret, passphrase, config)
     }
 

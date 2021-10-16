@@ -10,6 +10,7 @@ use ring::hmac;
 use serde::de;
 use serde::de::DeserializeOwned;
 use serde_json::from_str;
+use chrono::prelude::*;
 
 use super::errors::error_messages;
 use super::errors::*;
@@ -41,24 +42,27 @@ impl Client {
         }
     }
 
-    pub async fn post_signed(&self, endpoint: &str, request: &str) -> Result<String> {
-        let url = format!("{}{}?{}", self.host, endpoint, request);
+    pub async fn post_signed(&self, endpoint: &str, request_body: String) -> Result<String> {
+        let url = format!("{}{}", self.host, endpoint);
+        
         let response = self.inner
+            .clone()
             .post(url.as_str())
-            .headers(self.build_signed_headers(true, Method::POST, endpoint, request)?)
+            .headers(self.build_signed_headers(true, Method::POST, endpoint, &request_body)?)
+            .body(request_body.clone())
             .send()
             .await?;
+
         self.handler(response).await
     }
-
 
     pub async fn post_signed_p<T: de::DeserializeOwned, P: serde::Serialize>(
         &self, 
         endpoint: &str, 
         payload: P
     ) -> Result<T> {
-        let request = build_request_p(payload)?;
-        let string = self.post_signed(endpoint, &request).await?;
+        let request_body = serde_json::to_string(&payload)?;
+        let string = self.post_signed(endpoint, request_body).await?;
         let data: &str = string.as_str();
         let t = from_str(data)?;
         Ok(t)
@@ -66,6 +70,7 @@ impl Client {
 
     pub async fn get_signed(&self, endpoint: &str, request: &str) -> Result<String> {
         let url = format!("{}{}?{}", self.host, endpoint, request);
+        println!("url: {}", url);
 
         let response = self
             .inner
@@ -119,7 +124,7 @@ impl Client {
         }
     }
 
-    pub fn build_signed_headers(&self, content_type: bool, method: Method, endpoint: &str, request: &str) -> Result<HeaderMap> {
+    pub fn build_signed_headers(&self, content_type: bool, method: Method, endpoint: &str, request_body: &str) -> Result<HeaderMap> {
         let mut custon_headers = HeaderMap::new();
 
         custon_headers.insert(USER_AGENT, HeaderValue::from_static("okex-rs"));
@@ -130,31 +135,29 @@ impl Client {
             );
         }
 
-        if let Ok(timestamp) = get_timestamp() {
-            let pre_hash = format!("{}{}{}?{}{}", timestamp, method.as_str(), endpoint, request, self.secret_key);
+        let timestamp = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        let pre_hash = format!("{}{}{}{}", timestamp, method.as_str(), endpoint, request_body);
+        println!("pre_hash: {}", pre_hash);
 
-            let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
-            let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
+        let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
+        let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
 
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-KEY"),
-                HeaderValue::from_str(self.api_key.as_str())?,
-            );
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-SIGN"),
-                HeaderValue::from_str(&signature.as_str())?,
-            );
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-TIMESTAMP"),
-                HeaderValue::from_str(&timestamp.to_string())?,
-            );
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-PASSPHRASE"),
-                HeaderValue::from_str(self.passphrase.as_str())?,
-            );
-        } else {
-            return Err(Error::Msg("build_headers Failed to get timestamp".to_string()))
-        }
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-key"),
+            HeaderValue::from_str(self.api_key.as_str())?,
+        );
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-sign"),
+            HeaderValue::from_str(&signature.as_str())?,
+        );
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-timestamp"),
+            HeaderValue::from_str(&timestamp.to_string())?,
+        );
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-passphrase"),
+            HeaderValue::from_str(self.passphrase.as_str())?,
+        );
 
         Ok(custon_headers)
     }
@@ -174,31 +177,31 @@ impl Client {
             );
         }
 
-        if let Ok(timestamp) = get_timestamp() {
-            let pre_hash = format!("{}{}{}?{}{}", timestamp, method.as_str(), endpoint, query_string, self.secret_key);
+        let timestamp = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        println!("timestamp {}", timestamp);
 
-            let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
-            let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
+        let pre_hash = format!("{}{}{}?{}", timestamp, method.as_str(), endpoint, query_string);
 
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-KEY"),
-                HeaderValue::from_str(self.api_key.as_str())?,
-            );
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-SIGN"),
-                HeaderValue::from_str(&signature.as_str())?,
-            );
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-TIMESTAMP"),
-                HeaderValue::from_str(&timestamp.to_string())?,
-            );
-            custon_headers.insert(
-                HeaderName::from_static("OK-ACCESS-PASSPHRASE"),
-                HeaderValue::from_str(self.passphrase.as_str())?,
-            );
-        } else {
-            return Err(Error::Msg("build_headers Failed to get timestamp".to_string()))
-        }
+        let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
+        let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
+
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-key"),
+            HeaderValue::from_str(self.api_key.as_str())?,
+        );
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-sign"),
+            HeaderValue::from_str(&signature.as_str())?,
+        );
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-timestamp"),
+            HeaderValue::from_str(&timestamp.to_string())?,
+        );
+        custon_headers.insert(
+            HeaderName::from_static("ok-access-passphrase"),
+            HeaderValue::from_str(self.passphrase.as_str())?,
+        );
+
 
         Ok(custon_headers)
     }

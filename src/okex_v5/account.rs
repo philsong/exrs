@@ -82,7 +82,7 @@ impl Account {
             client_order_id: None,
             tag: None,
             side: OrderSide::Buy,
-            position_side: None, // PositionSide::Long,
+            position_side: Some(PositionSide::Long),
             order_type: OrderType::Limit,
             qty: qty.into(),
             price: price.into(),
