@@ -41,7 +41,7 @@ impl Config {
         self.ws_endpoint = ws_endpoint.into();
         self
     }
-    
+
     pub fn set_ws_private<T: Into<String>>(mut self, ws_endpoint: T) -> Self {
         self.ws_endpoint = ws_endpoint.into();
         self

@@ -3,8 +3,8 @@ use super::errors::*;
 use super::ws_model::WebsocketResponse;
 
 use log::debug;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::str::from_utf8;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use actix_codec::Framed;
 use awc::{
@@ -12,10 +12,9 @@ use awc::{
     BoxedSocket, Client, ClientResponse,
 };
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
+use libdeflater::Decompressor;
 use serde_json::from_slice;
 use tokio::sync::mpsc;
-use libdeflater::Decompressor;
-
 
 pub struct WebSockets<WE: serde::de::DeserializeOwned> {
     pub socket: Option<(ClientResponse, Framed<BoxedSocket, Codec>)>,
@@ -44,10 +43,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
 
     /// Connect to a websocket endpoint
     pub async fn connect(&mut self, endpoint: &str) -> Result<()> {
-        let wss: String = format!(
-            "{}/{}",
-            self.conf.ws_endpoint, endpoint
-        );
+        let wss: String = format!("{}/{}", self.conf.ws_endpoint, endpoint);
 
         let client = Client::builder()
             .max_http_version(awc::http::Version::HTTP_11)
@@ -95,23 +91,24 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         if msg.is_empty() {
                             return Ok(());
                         }
-                    
+
                         let msg = huobi_decompress(msg.to_vec()).unwrap();
 
-                        if let Ok(event ) = from_slice(&msg) {
+                        if let Ok(event) = from_slice(&msg) {
                             if let Err(_e) = self.sender.send(event).await {
                                 println!("SendError<WE>");
                             }
                         } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
                             println!("WebsocketResponse: {:?}", response);
                         } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {
-                            socket.send(Message::Text(from_utf8(&msg)?.replace("i", "o").into())).await?;
+                            socket
+                                .send(Message::Text(from_utf8(&msg)?.replace("i", "o").into()))
+                                .await?;
                         } else {
                             return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
                         }
                     }
-                    Frame::Ping(_) | Frame::Pong(_) | Frame::Text(_) | Frame::Continuation(_) => {
-                    }
+                    Frame::Ping(_) | Frame::Pong(_) | Frame::Text(_) | Frame::Continuation(_) => {}
                     Frame::Close(e) => {
                         return Err(Error::Msg(format!("Disconnected {:?}", e)));
                     }

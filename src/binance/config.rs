@@ -41,7 +41,7 @@ impl Config {
         self.ws_endpoint = ws_endpoint.into();
         self
     }
-    
+
     pub fn set_recv_window(mut self, recv_window: u64) -> Self {
         self.recv_window = recv_window;
         self

@@ -46,7 +46,6 @@ where
 //     let query_string = qs::to_string(&payload)?;
 //     let mut parameters: BTreeMap<String, String> = BTreeMap::new();
 
-
 //     parameters.insert("timestamp".into(), timestamp.to_string());
 
 //     let mut request = query_string;

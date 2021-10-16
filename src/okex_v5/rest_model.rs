@@ -81,7 +81,11 @@ pub struct OrderRequest {
     pub order_type: OrderType,
     #[serde(rename = "sz", with = "string_or_float")]
     pub qty: f64,
-    #[serde(rename = "px", with = "string_or_float_opt", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "px",
+        with = "string_or_float_opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub price: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reduce_only: Option<bool>,

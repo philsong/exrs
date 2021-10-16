@@ -115,7 +115,7 @@ impl<WE: serde::de::DeserializeOwned> FuturesWebSockets<WE> {
                 self.socket = Some(answer);
                 Ok(())
             }
-            Err(e) => Err(Error::Msg(format!("Error during handshake {}", e)))
+            Err(e) => Err(Error::Msg(format!("Error during handshake {}", e))),
         }
     }
 
@@ -152,8 +152,7 @@ impl<WE: serde::de::DeserializeOwned> FuturesWebSockets<WE> {
                     Frame::Ping(_) => {
                         socket.send(Message::Pong(Bytes::from_static(b""))).await?;
                     }
-                    Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {
-                    }
+                    Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {}
                     Frame::Close(e) => {
                         return Err(Error::Msg(format!("Disconnected {:?}", e)));
                     }

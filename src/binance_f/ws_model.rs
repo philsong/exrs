@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::rest_model::string_or_float;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "e")]

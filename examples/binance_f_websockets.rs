@@ -2,7 +2,7 @@ use env_logger::Builder;
 use exrs::binance_f::api::*;
 use exrs::binance_f::userstream::*;
 use exrs::binance_f::websockets::*;
-use exrs::binance_f::ws_model::{FuturesWebsocketEvent, BookTickerEvent};
+use exrs::binance_f::ws_model::{BookTickerEvent, FuturesWebsocketEvent};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 #[actix_rt::main]
@@ -70,7 +70,6 @@ async fn user_stream_websocket() {
         println!("Not able to start an User Stream (Check your API_KEY)");
     }
 }
-
 
 #[allow(dead_code)]
 async fn market_websocket() {

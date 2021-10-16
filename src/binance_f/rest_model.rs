@@ -1042,7 +1042,6 @@ pub struct PropertyCmd {
     pub params: (String, bool),
 }
 
-
 pub(crate) mod string_or_float {
     use std::fmt;
 

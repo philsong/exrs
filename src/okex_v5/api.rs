@@ -7,7 +7,11 @@ use super::market::*;
 use super::userstream::*;
 
 pub trait Okex: Sized {
-    fn new(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>) -> Self {
+    fn new(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+    ) -> Self {
         Self::new_with_config(api_key, secret_key, passphrase, &Config::default())
     }
 
@@ -21,45 +25,100 @@ pub trait Okex: Sized {
         Self::new_with_config(api_key, secret, passphrase, config)
     }
 
-    fn new_with_config(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>, config: &Config) -> Self;
+    fn new_with_config(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+        config: &Config,
+    ) -> Self;
 }
 
 impl Okex for General {
-    fn new_with_config(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>, config: &Config) -> General {
+    fn new_with_config(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+        config: &Config,
+    ) -> General {
         General {
-            client: Client::new(api_key, secret_key, passphrase, config.rest_api_endpoint.clone()),
+            client: Client::new(
+                api_key,
+                secret_key,
+                passphrase,
+                config.rest_api_endpoint.clone(),
+            ),
         }
     }
 }
 
 impl Okex for Account {
-    fn new_with_config(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>, config: &Config) -> Account {
+    fn new_with_config(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+        config: &Config,
+    ) -> Account {
         Account {
-            client: Client::new(api_key, secret_key, passphrase, config.rest_api_endpoint.clone()),
+            client: Client::new(
+                api_key,
+                secret_key,
+                passphrase,
+                config.rest_api_endpoint.clone(),
+            ),
         }
     }
 }
 
 impl Okex for Market {
-    fn new_with_config(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>, config: &Config) -> Market {
+    fn new_with_config(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+        config: &Config,
+    ) -> Market {
         Market {
-            client: Client::new(api_key, secret_key, passphrase, config.rest_api_endpoint.clone()),
+            client: Client::new(
+                api_key,
+                secret_key,
+                passphrase,
+                config.rest_api_endpoint.clone(),
+            ),
         }
     }
 }
 
 impl Okex for UserStream {
-    fn new_with_config(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>, config: &Config) -> UserStream {
+    fn new_with_config(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+        config: &Config,
+    ) -> UserStream {
         UserStream {
-            client: Client::new(api_key, secret_key, passphrase, config.rest_api_endpoint.clone()),
+            client: Client::new(
+                api_key,
+                secret_key,
+                passphrase,
+                config.rest_api_endpoint.clone(),
+            ),
         }
     }
 }
 
 impl Okex for Margin {
-    fn new_with_config(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>, config: &Config) -> Self {
+    fn new_with_config(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+        config: &Config,
+    ) -> Self {
         Margin {
-            client: Client::new(api_key, secret_key, passphrase, config.rest_api_endpoint.clone()),
+            client: Client::new(
+                api_key,
+                secret_key,
+                passphrase,
+                config.rest_api_endpoint.clone(),
+            ),
         }
     }
 }

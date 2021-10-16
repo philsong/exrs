@@ -26,23 +26,41 @@ pub static DEPTH_ORDERBOOK: &str = "depthUpdate";
 pub static PARTIAL_ORDERBOOK: &str = "lastUpdateId";
 pub static DAYTICKER: &str = "24hrTicker";
 
-pub fn all_ticker_stream() -> &'static str { "!ticker@arr" }
+pub fn all_ticker_stream() -> &'static str {
+    "!ticker@arr"
+}
 
-pub fn ticker_stream(symbol: &str) -> String { format!("{}@ticker", symbol) }
+pub fn ticker_stream(symbol: &str) -> String {
+    format!("{}@ticker", symbol)
+}
 
-pub fn agg_trade_stream(symbol: &str) -> String { format!("{}@aggTrade", symbol) }
+pub fn agg_trade_stream(symbol: &str) -> String {
+    format!("{}@aggTrade", symbol)
+}
 
-pub fn trade_stream(symbol: &str) -> String { format!("{}@trade", symbol) }
+pub fn trade_stream(symbol: &str) -> String {
+    format!("{}@trade", symbol)
+}
 
-pub fn kline_stream(symbol: &str, interval: &str) -> String { format!("{}@kline_{}", symbol, interval) }
+pub fn kline_stream(symbol: &str, interval: &str) -> String {
+    format!("{}@kline_{}", symbol, interval)
+}
 
-pub fn book_ticker_stream(symbol: &str) -> String { format!("{}@bookTicker", symbol) }
+pub fn book_ticker_stream(symbol: &str) -> String {
+    format!("{}@bookTicker", symbol)
+}
 
-pub fn all_book_ticker_stream() -> &'static str { "!bookTicker" }
+pub fn all_book_ticker_stream() -> &'static str {
+    "!bookTicker"
+}
 
-pub fn all_mini_ticker_stream() -> &'static str { "!miniTicker@arr" }
+pub fn all_mini_ticker_stream() -> &'static str {
+    "!miniTicker@arr"
+}
 
-pub fn mini_ticker_stream(symbol: &str) -> String { format!("{}@miniTicker", symbol) }
+pub fn mini_ticker_stream(symbol: &str) -> String {
+    format!("{}@miniTicker", symbol)
+}
 
 /// # Arguments
 ///
@@ -92,10 +110,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
 
     /// Connect to a websocket endpoint
     pub async fn connect(&mut self, endpoint: &str) -> Result<()> {
-        let wss: String = format!(
-            "{}/{}/{}",
-            self.conf.ws_endpoint, WS_ENDPOINT, endpoint
-        );
+        let wss: String = format!("{}/{}/{}", self.conf.ws_endpoint, WS_ENDPOINT, endpoint);
 
         let client = Client::builder()
             .max_http_version(awc::http::Version::HTTP_11)
@@ -143,8 +158,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                     Frame::Ping(_) => {
                         socket.send(Message::Pong(Bytes::from_static(b""))).await?;
                     }
-                    Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {
-                    }
+                    Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {}
                     Frame::Close(e) => {
                         return Err(Error::Msg(format!("Disconnected {:?}", e)));
                     }

@@ -56,7 +56,6 @@ static API_V5_MAX_WITHDRAWAL: &str = "/api/v5/account/max-withdrawal";
 // todo
 // sub account
 
-
 #[derive(Clone)]
 pub struct Account {
     pub client: Client,
@@ -64,13 +63,16 @@ pub struct Account {
 
 impl Account {
     async fn post_order(&self, order: OrderRequest) -> Result<TransactionResponse> {
-        self.client
-            .post_signed_p(API_V5_ORDER, order)
-            .await
+        self.client.post_signed_p(API_V5_ORDER, order).await
     }
-    
+
     // Place a LIMIT order - BUY
-    pub async fn limit_buy<S, F>(&self, symbol: S, qty: F, price: f64) -> Result<TransactionResponse>
+    pub async fn limit_buy<S, F>(
+        &self,
+        symbol: S,
+        qty: F,
+        price: f64,
+    ) -> Result<TransactionResponse>
     where
         S: Into<String>,
         F: Into<f64>,

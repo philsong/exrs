@@ -13,7 +13,7 @@ use awc::{
     BoxedSocket, Client, ClientResponse,
 };
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::from_slice;
 use tokio::sync::mpsc;
 use uuid::Uuid;
@@ -45,10 +45,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
 
     /// Connect to a websocket endpoint
     pub async fn connect(&mut self, endpoint: &str) -> Result<()> {
-        let wss: String = format!(
-            "{}/{}",
-            self.conf.ws_endpoint, endpoint
-        );
+        let wss: String = format!("{}/{}", self.conf.ws_endpoint, endpoint);
 
         let client = Client::builder()
             .max_http_version(awc::http::Version::HTTP_11)
@@ -96,7 +93,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         if msg.is_empty() {
                             return Ok(());
                         }
-                        if let Ok(event ) = from_slice(&msg) {
+                        if let Ok(event) = from_slice(&msg) {
                             if let Err(_e) = self.sender.send(event).await {
                                 println!("SendError<WE>");
                             }
@@ -121,7 +118,6 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
     // trade start from here
     async fn place_order(&mut self, order: WSOrder) -> Result<()> {
         if let Some((_, ref mut socket)) = self.socket {
-
             let ws_order = WSOrderRequest {
                 id: Uuid::new_v4().to_string(),
                 op: "order".to_string(),
@@ -135,10 +131,9 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
             Err(Error::Msg("Not able to send requests".to_string()))
         }
     }
-    
+
     async fn place_multipy_order(&mut self, orders: Vec<WSOrder>) -> Result<()> {
         if let Some((_, ref mut socket)) = self.socket {
-
             let ws_orders = WSOrderRequest {
                 id: Uuid::new_v4().to_string(),
                 op: "batch-orders".to_string(),
@@ -153,7 +148,8 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         }
     }
 
-    pub async fn limit_buy(&mut self, 
+    pub async fn limit_buy(
+        &mut self,
         symbol: impl Into<String>,
         qty: impl Into<String>,
         price: impl Into<String>,
@@ -177,11 +173,12 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         Ok(())
     }
 
-    pub async fn limit_sell(&mut self, 
+    pub async fn limit_sell(
+        &mut self,
         symbol: impl Into<String>,
         qty: impl Into<String>,
         price: impl Into<String>,
-        order_type: OrderType
+        order_type: OrderType,
     ) -> Result<()> {
         let order = WSOrder {
             symbol: symbol.into(),
@@ -201,25 +198,15 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         Ok(())
     }
 
-    pub async fn market_buy() {
+    pub async fn market_buy() {}
 
-    }
+    pub async fn market_sell() {}
 
-    pub async fn market_sell() {
+    pub async fn cancel_order() {}
 
-    }
+    pub async fn amend_order() {}
 
-    pub async fn cancel_order() {
-
-    }
-
-    pub async fn amend_order() {
-
-    }
-
-    pub async fn amend_multiple_order() {
-
-    }
+    pub async fn amend_multiple_order() {}
 }
 
 #[derive(Deserialize, Serialize)]

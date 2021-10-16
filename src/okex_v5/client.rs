@@ -1,16 +1,16 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
+use chrono::prelude::*;
 use hex::encode as hex_encode;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE, USER_AGENT};
+use reqwest::Method;
 use reqwest::Response;
 use reqwest::StatusCode;
-use reqwest::Method;
 use ring::hmac;
 use serde::de;
 use serde::de::DeserializeOwned;
 use serde_json::from_str;
-use chrono::prelude::*;
 
 use super::errors::error_messages;
 use super::errors::*;
@@ -30,7 +30,12 @@ impl Client {
     /// Returns a client based on the specified host and credentials
     /// Credentials do not need to be specified when using public endpoints
     /// Host is mandatory
-    pub fn new(api_key: Option<String>, secret_key: Option<String>, passphrase: Option<String>, host: String) -> Self {
+    pub fn new(
+        api_key: Option<String>,
+        secret_key: Option<String>,
+        passphrase: Option<String>,
+        host: String,
+    ) -> Self {
         let builder: reqwest::ClientBuilder = reqwest::ClientBuilder::new();
         let builder = builder.timeout(Duration::from_secs(2));
         Client {
@@ -44,8 +49,9 @@ impl Client {
 
     pub async fn post_signed(&self, endpoint: &str, request_body: String) -> Result<String> {
         let url = format!("{}{}", self.host, endpoint);
-        
-        let response = self.inner
+
+        let response = self
+            .inner
             .clone()
             .post(url.as_str())
             .headers(self.build_signed_headers(true, Method::POST, endpoint, &request_body)?)
@@ -57,9 +63,9 @@ impl Client {
     }
 
     pub async fn post_signed_p<T: de::DeserializeOwned, P: serde::Serialize>(
-        &self, 
-        endpoint: &str, 
-        payload: P
+        &self,
+        endpoint: &str,
+        payload: P,
     ) -> Result<T> {
         let request_body = serde_json::to_string(&payload)?;
         let string = self.post_signed(endpoint, request_body).await?;
@@ -84,9 +90,9 @@ impl Client {
     }
 
     pub async fn get_signed_d<T: de::DeserializeOwned>(
-        &self, 
+        &self,
         endpoint: &str,
-        request: &str
+        request: &str,
     ) -> Result<T> {
         let r = self.get_signed(endpoint, request).await?;
         let t = from_str(r.as_str())?;
@@ -94,8 +100,8 @@ impl Client {
     }
 
     // pub async fn get_signed_p<T: de::DeserializeOwned, P: serde::Serialize>(
-    //     &self, 
-    //     endpoint: &str, 
+    //     &self,
+    //     endpoint: &str,
     //     payload: Option<P>,
     // ) -> Result<T> {
     //     let req = if let Some(p) = payload {
@@ -117,26 +123,32 @@ impl Client {
 
         custon_headers.insert(USER_AGENT, HeaderValue::from_static("okex-rs"));
         if content_type {
-            custon_headers.insert(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/json"),
-            );
+            custon_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         }
     }
 
-    pub fn build_signed_headers(&self, content_type: bool, method: Method, endpoint: &str, request_body: &str) -> Result<HeaderMap> {
+    pub fn build_signed_headers(
+        &self,
+        content_type: bool,
+        method: Method,
+        endpoint: &str,
+        request_body: &str,
+    ) -> Result<HeaderMap> {
         let mut custon_headers = HeaderMap::new();
 
         custon_headers.insert(USER_AGENT, HeaderValue::from_static("okex-rs"));
         if content_type {
-            custon_headers.insert(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/json"),
-            );
+            custon_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         }
 
         let timestamp = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
-        let pre_hash = format!("{}{}{}{}", timestamp, method.as_str(), endpoint, request_body);
+        let pre_hash = format!(
+            "{}{}{}{}",
+            timestamp,
+            method.as_str(),
+            endpoint,
+            request_body
+        );
         println!("pre_hash: {}", pre_hash);
 
         let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
@@ -162,25 +174,34 @@ impl Client {
         Ok(custon_headers)
     }
 
-    pub fn build_signed_headers_p<S>(&self, content_type: bool, method: Method, endpoint: &str, payload: S) -> Result<HeaderMap> 
+    pub fn build_signed_headers_p<S>(
+        &self,
+        content_type: bool,
+        method: Method,
+        endpoint: &str,
+        payload: S,
+    ) -> Result<HeaderMap>
     where
-        S: serde::Serialize
+        S: serde::Serialize,
     {
         let query_string = qs::to_string(&payload)?;
         let mut custon_headers = HeaderMap::new();
 
         custon_headers.insert(USER_AGENT, HeaderValue::from_static("okex-rs"));
         if content_type {
-            custon_headers.insert(
-                CONTENT_TYPE,
-                HeaderValue::from_static("application/json"),
-            );
+            custon_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         }
 
         let timestamp = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         println!("timestamp {}", timestamp);
 
-        let pre_hash = format!("{}{}{}?{}", timestamp, method.as_str(), endpoint, query_string);
+        let pre_hash = format!(
+            "{}{}{}?{}",
+            timestamp,
+            method.as_str(),
+            endpoint,
+            query_string
+        );
 
         let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
         let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
@@ -201,7 +222,6 @@ impl Client {
             HeaderName::from_static("ok-access-passphrase"),
             HeaderValue::from_str(self.passphrase.as_str())?,
         );
-
 
         Ok(custon_headers)
     }

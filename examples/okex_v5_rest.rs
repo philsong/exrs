@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate log;
 
+use env_logger::Builder;
 use exrs::okex_v5::account::*;
 use exrs::okex_v5::api::*;
 use exrs::okex_v5::config::Config;
 use exrs::okex_v5::errors::Error;
-use env_logger::Builder;
 
 #[tokio::main]
 async fn main() {
