@@ -228,21 +228,21 @@ impl Client {
     }
 
     fn build_headers(&self, content_type: bool) -> Result<HeaderMap> {
-        let mut custon_headers = HeaderMap::new();
+        let mut custom_headers = HeaderMap::new();
 
-        custon_headers.insert(USER_AGENT, HeaderValue::from_static("binance-rs"));
+        custom_headers.insert(USER_AGENT, HeaderValue::from_static("binance-rs"));
         if content_type {
-            custon_headers.insert(
+            custom_headers.insert(
                 CONTENT_TYPE,
                 HeaderValue::from_static("application/x-www-form-urlencoded"),
             );
         }
-        custon_headers.insert(
+        custom_headers.insert(
             HeaderName::from_static("x-mbx-apikey"),
             HeaderValue::from_str(self.api_key.as_str())?,
         );
 
-        Ok(custon_headers)
+        Ok(custom_headers)
     }
 
     async fn handler(&self, response: Response) -> Result<String> {

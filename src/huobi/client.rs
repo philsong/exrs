@@ -130,14 +130,14 @@ impl Client {
     }
 
     fn build_headers(&self, content_type: bool) -> Result<HeaderMap> {
-        let mut custon_headers = HeaderMap::new();
+        let mut custom_headers = HeaderMap::new();
 
-        // custon_headers.insert(USER_AGENT, HeaderValue::from_static("huobi-rs"));
+        // custom_headers.insert(USER_AGENT, HeaderValue::from_static("huobi-rs"));
         if content_type {
-            custon_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+            custom_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         }
 
-        Ok(custon_headers)
+        Ok(custom_headers)
     }
 
     async fn handler(&self, response: Response) -> Result<String> {

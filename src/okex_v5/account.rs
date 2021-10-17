@@ -93,4 +93,35 @@ impl Account {
         };
         self.post_order(order).await
     }
+
+    pub async fn limit_sell<S, F>(
+        &self,
+        symbol: S,
+        qty: F,
+        price: f64,
+    ) -> Result<TransactionResponse>
+    where
+        S: Into<String>,
+        F: Into<f64>,
+    {
+        let order: OrderRequest = OrderRequest {
+            symbol: symbol.into(),
+            trade_mode: TradeMode::Cross,
+            currency: None,
+            client_order_id: None,
+            tag: None,
+            side: OrderSide::Sell,
+            position_side: Some(PositionSide::Long),
+            order_type: OrderType::Limit,
+            qty: qty.into(),
+            price: price.into(),
+            reduce_only: None,
+            target_currency: None,
+        };
+        self.post_order(order).await
+    }
+
+    
+
+
 }
