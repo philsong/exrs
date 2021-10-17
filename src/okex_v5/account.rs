@@ -179,15 +179,24 @@ impl Account {
             margin_mode: MarginMode::Cross,
             currency: None,
         };
-        self.post_order(order).await
+        let request_body = serde_json::to_string(&order)?;
+        self.client
+            .post_signed_p(API_V5_CLOSE_POSITION, request_body)
+            .await
     }
 
     /// Place a cancellation order
     pub async fn cancel_order(&self, order: OrderCancellation) -> Result<TransactionResponse> {
-        self.post_order(order).await
+        let request_body = serde_json::to_string(&order)?;
+        self.client
+            .post_signed_p(API_V5_CANCEL_ORDER, request_body)
+            .await
     }
 
-    pub async fn get_all_open_orders(&self, order: OrderCancellation) -> Result<TransactionResponse> {
-        self.post_order(order).await
+    pub async fn cancel_all_open_orders(&self, order: Vec<OrderCancellation>) -> Result<TransactionResponse> {
+        let request_body = serde_json::to_string(&order)?;
+        self.client
+            .post_signed_p(API_V5_CANCEL_ORDER, request_body)
+            .await
     }
 }
