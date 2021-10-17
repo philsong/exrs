@@ -1,4 +1,5 @@
 use serde::Serializer;
+use serde::de::DeserializeOwned;
 use std::collections::BTreeMap;
 use std::fmt;
 
@@ -62,7 +63,10 @@ pub struct Account {
 }
 
 impl Account {
-    async fn post_order(&self, order: OrderRequest) -> Result<TransactionResponse> {
+    async fn post_order<O>(&self, order: O) -> Result<TransactionResponse> 
+    where
+        O: serde::Serialize
+    {
         self.client.post_signed_p(API_V5_ORDER, order).await
     }
 
@@ -111,7 +115,7 @@ impl Account {
             client_order_id: None,
             tag: None,
             side: OrderSide::Sell,
-            position_side: Some(PositionSide::Long),
+            position_side: Some(PositionSide::Short),
             order_type: OrderType::Limit,
             qty: qty.into(),
             price: price.into(),
@@ -121,7 +125,69 @@ impl Account {
         self.post_order(order).await
     }
 
-    
+    pub async fn market_buy<S, F>(&self, symbol: S, qty: F) -> Result<TransactionResponse>
+    where
+        S: Into<String>,
+        F: Into<f64>,
+    {
+        let order = OrderRequest {
+            symbol: symbol.into(),
+            trade_mode: TradeMode::Cross,
+            currency: None,
+            client_order_id: None,
+            tag: None,
+            side: OrderSide::Buy,
+            position_side: Some(PositionSide::Long),
+            order_type: OrderType::Market,
+            qty: qty.into(),
+            price: None,
+            reduce_only: None,
+            target_currency: None,
+        };
+        self.post_order(order).await
+    }
 
+    pub async fn market_sell<S, F>(&self, symbol: S, qty: F) -> Result<TransactionResponse>
+    where
+        S: Into<String>,
+        F: Into<f64>,
+    {
+        let order = OrderRequest {
+            symbol: symbol.into(),
+            trade_mode: TradeMode::Cross,
+            currency: None,
+            client_order_id: None,
+            tag: None,
+            side: OrderSide::Buy,
+            position_side: Some(PositionSide::Short),
+            order_type: OrderType::Market,
+            qty: qty.into(),
+            price: None,
+            reduce_only: None,
+            target_currency: None,
+        };
+        self.post_order(order).await
+    }
 
+    pub async fn close_position<S>(&self, symbol: S, pos_side: Option<PositionSide>) -> Result<TransactionResponse>
+    where
+        S: Into<String>,
+    {
+        let order = ClosePositionRequest {
+            symbol: symbol.into(),
+            pos_side: pos_side,
+            margin_mode: MarginMode::Cross,
+            currency: None,
+        };
+        self.post_order(order).await
+    }
+
+    /// Place a cancellation order
+    pub async fn cancel_order(&self, order: OrderCancellation) -> Result<TransactionResponse> {
+        self.post_order(order).await
+    }
+
+    pub async fn get_all_open_orders(&self, order: OrderCancellation) -> Result<TransactionResponse> {
+        self.post_order(order).await
+    }
 }

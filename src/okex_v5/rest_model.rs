@@ -61,6 +61,21 @@ impl Default for TradeMode {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum MarginMode {
+    Cross,
+    Isolated,
+}
+
+/// By default, Cross
+impl Default for MarginMode {
+    fn default() -> Self {
+        Self::Cross
+    }
+}
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderRequest {
@@ -105,10 +120,59 @@ pub struct TransactionResponse {
 pub struct Transaction {
     pub cl_ord_id: String,
     pub ord_id: String,
-    pub tag: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
     pub s_code: String,
     pub s_msg: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClosePositionRequest {
+    #[serde(rename = "inst_id")]
+    pub symbol: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pos_side: Option<PositionSide>,
+    #[serde(rename = "mgnMode")]
+    pub margin_mode: MarginMode,
+    #[serde(rename = "ccy", skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+}
+
+
+/// Order Cancellation Request
+/// perform an order cancellation for the account
+/// only works if the parameters match an active order
+/// either order_id (binance side id) or orig_client_order_id (id originally given by the client) must be set
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderCancellation {
+    #[serde(rename = "inst_id")]
+    pub symbol: String,
+    #[serde(rename = "ordId", skip_serializing_if = "Option::is_none")]
+    pub order_id: Option<String>,
+    #[serde(rename = "clOrdId", skip_serializing_if = "Option::is_none")]
+    pub orig_client_order_id: Option<String>,
+}
+
+// #[derive(Debug, Serialize, Deserialize, Clone)]
+// #[serde(rename_all = "camelCase")]
+// pub struct CanceledOrderResponse {
+//     pub code: String,
+//     pub msg: String,
+//     pub data: Vec<CanceledOrder>,
+// }
+
+// #[derive(Debug, Serialize, Deserialize, Clone)]
+// #[serde(rename_all = "camelCase")]
+// pub struct CanceledOrder {
+//     #[serde(rename = "clOrdId")]
+//     pub cl_ord_id: String,
+//     #[serde(rename = "ordId")]
+//     pub ord_id: String,
+//     pub s_code: String,
+//     pub s_msg: String,
+// }
 
 pub(crate) mod string_or_float {
     use std::fmt;
