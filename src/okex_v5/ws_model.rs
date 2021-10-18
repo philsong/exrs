@@ -4,7 +4,15 @@ use super::rest_model::{string_or_float, string_or_uint};
 #[serde(rename_all = "camelCase")]
 pub struct Arg {
     pub channel: String,
-    pub inst_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inst_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ccy: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uly: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inst_type: Option<String>,
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -223,3 +231,295 @@ pub struct AlgoOrdersEvent {}
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AdvanceAlgoOrdersEvent {}
+
+
+
+// private from here
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountEvent {
+    pub arg: Arg,
+    pub data: Vec<Account>,
+}
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// #[serde(rename_all = "camelCase")]
+// pub struct AccountArg {
+//     pub channel: String,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub ccy: Option<String>,
+// }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Account {
+    pub u_time: String,
+    pub total_eq: String,
+    pub iso_eq: String,
+    pub adj_eq: String,
+    pub ord_froz: String,
+    pub imr: String,
+    pub mmr: String,
+    pub notional_usd: String,
+    pub mgn_ratio: String,
+    pub details: Vec<Detail>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Detail {
+    pub avail_bal: String,
+    pub avail_eq: String,
+    pub ccy: String,
+    pub cash_bal: String,
+    pub u_time: String,
+    pub dis_eq: String,
+    pub eq: String,
+    pub eq_usd: String,
+    pub frozen_bal: String,
+    pub interest: String,
+    pub iso_eq: String,
+    pub liab: String,
+    pub max_loan: String,
+    pub mgn_ratio: String,
+    pub notional_lever: String,
+    pub ord_frozen: String,
+    pub upl: String,
+    pub upl_liab: String,
+    pub cross_liab: String,
+    pub iso_liab: String,
+    pub coin_usd_price: String,
+    pub stgy_eq: String,
+    pub iso_upl: String,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PositionsEvent {
+    pub arg: Arg,
+    pub data: Vec<Positions>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Positions {
+    pub adl: String,
+    pub avail_pos: String,
+    pub avg_px: String,
+    pub c_time: String,
+    pub ccy: String,
+    #[serde(rename = "deltaBS")]
+    pub delta_bs: String,
+    #[serde(rename = "deltaPA")]
+    pub delta_pa: String,
+    #[serde(rename = "gammaBS")]
+    pub gamma_bs: String,
+    #[serde(rename = "gammaPA")]
+    pub gamma_pa: String,
+    pub imr: String,
+    pub inst_id: String,
+    pub inst_type: String,
+    pub interest: String,
+    pub last: String,
+    pub lever: String,
+    pub liab: String,
+    pub liab_ccy: String,
+    pub liq_px: String,
+    pub margin: String,
+    pub mgn_mode: String,
+    pub mgn_ratio: String,
+    pub mmr: String,
+    pub notional_usd: String,
+    pub opt_val: String,
+    pub p_time: String,
+    pub pos: String,
+    pub pos_ccy: String,
+    pub pos_id: String,
+    pub pos_side: String,
+    #[serde(rename = "thetaBS")]
+    pub theta_bs: String,
+    #[serde(rename = "thetaPA")]
+    pub theta_pa: String,
+    pub trade_id: String,
+    pub u_time: String,
+    pub upl: String,
+    pub upl_ratio: String,
+    #[serde(rename = "vegaBS")]
+    pub vega_bs: String,
+    #[serde(rename = "vegaPA")]
+    pub vega_pa: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BalancePositionEvent {
+    pub arg: Arg,
+    pub data: Vec<BalancePosition>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BalancePosition {
+    pub p_time: String,
+    pub event_type: String,
+    pub bal_data: Vec<BalDaum>,
+    pub pos_data: Vec<PosDaum>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BalDaum {
+    pub ccy: String,
+    pub cash_bal: String,
+    pub u_time: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PosDaum {
+    pub pos_id: String,
+    pub trade_id: String,
+    pub inst_id: String,
+    pub inst_type: String,
+    pub mgn_mode: String,
+    pub pos_side: String,
+    pub pos: String,
+    pub ccy: String,
+    pub pos_ccy: String,
+    pub avg_px: String,
+    #[serde(rename = "uTIme")]
+    pub u_time: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderEvent {
+    pub arg: Arg,
+    pub data: Vec<Order>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Order {
+    pub inst_type: String,
+    pub inst_id: String,
+    pub ccy: String,
+    pub ord_id: String,
+    pub cl_ord_id: String,
+    pub tag: String,
+    pub px: String,
+    pub sz: String,
+    pub notional_usd: String,
+    pub ord_type: String,
+    pub side: String,
+    pub pos_side: String,
+    pub td_mode: String,
+    pub tgt_ccy: String,
+    pub fill_sz: String,
+    pub fill_px: String,
+    pub trade_id: String,
+    pub acc_fill_sz: String,
+    pub fill_notional_usd: String,
+    pub fill_time: String,
+    pub fill_fee: String,
+    pub fill_fee_ccy: String,
+    pub exec_type: String,
+    pub state: String,
+    pub avg_px: String,
+    pub lever: String,
+    pub tp_trigger_px: String,
+    pub tp_ord_px: String,
+    pub sl_trigger_px: String,
+    pub sl_ord_px: String,
+    pub fee_ccy: String,
+    pub fee: String,
+    pub rebate_ccy: String,
+    pub rebate: String,
+    pub pnl: String,
+    pub category: String,
+    pub u_time: String,
+    pub c_time: String,
+    pub req_id: String,
+    pub amend_result: String,
+    pub code: String,
+    pub msg: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AlgoOrdersEvent {
+    pub arg: Arg,
+    pub data: Vec<AlgoOrders>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AlgoOrders {
+    pub inst_type: String,
+    pub inst_id: String,
+    pub ord_id: String,
+    pub ccy: String,
+    pub algo_id: String,
+    pub px: String,
+    pub sz: String,
+    pub td_mode: String,
+    pub tgt_ccy: String,
+    pub notional_usd: String,
+    pub ord_type: String,
+    pub side: String,
+    pub pos_side: String,
+    pub state: String,
+    pub lever: String,
+    pub tp_trigger_px: String,
+    pub tp_ord_px: String,
+    pub sl_trigger_px: String,
+    pub trigger_px: String,
+    pub ord_px: String,
+    pub actual_sz: String,
+    pub actual_px: String,
+    pub actual_side: String,
+    pub trigger_time: String,
+    pub c_time: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdvanceAlgoOrdersEvent {
+    pub arg: Arg,
+    pub data: Vec<AdvanceAlgoOrders>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdvanceAlgoOrders {
+    pub actual_px: String,
+    pub actual_side: String,
+    pub actual_sz: String,
+    pub algo_id: String,
+    pub c_time: String,
+    pub ccy: String,
+    pub count: String,
+    pub inst_id: String,
+    pub inst_type: String,
+    pub lever: String,
+    pub notional_usd: String,
+    pub ord_px: String,
+    pub ord_type: String,
+    pub p_time: String,
+    pub pos_side: String,
+    pub px_limit: String,
+    pub px_spread: String,
+    pub px_var: String,
+    pub side: String,
+    pub sl_ord_px: String,
+    pub sl_trigger_px: String,
+    pub state: String,
+    pub sz: String,
+    pub sz_limit: String,
+    pub td_mode: String,
+    pub time_interval: String,
+    pub tp_ord_px: String,
+    pub tp_trigger_px: String,
+    pub trigger_px: String,
+    pub trigger_time: String,
+}
