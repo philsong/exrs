@@ -1,7 +1,7 @@
 use super::config::*;
 use super::errors::*;
 use super::rest_model::OrderType;
-use super::ws_model::WebsocketResponse;
+use super::ws_model::{WebsocketResponse, LoginRequest, LoginConfig};
 
 use awc::ws::Message;
 use log::debug;
@@ -12,7 +12,10 @@ use awc::{
     ws::{Codec, Frame},
     BoxedSocket, Client, ClientResponse,
 };
+use chrono::prelude::*;
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
+use ring::hmac;
+use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use serde_json::from_slice;
 use tokio::sync::mpsc;
@@ -81,6 +84,46 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
 
     pub fn socket(&self) -> &Option<(ClientResponse, Framed<BoxedSocket, Codec>)> {
         &self.socket
+    }
+
+    pub async fn login(&mut self, api_key: String, secret_key: String, passphrase: String) -> Result<()> {
+        // {
+        //     "op": "login",
+        //     "args": [
+        //       {
+        //         "apiKey": "985d5b66-57ce-40fb-b714-afc0b9787083",
+        //         "passphrase": "123456",
+        //         "timestamp": "1538054050",
+        //         "sign": "7L+zFQ+CEgGu5rzCj4+BdV2/uUHGqddA9pI6ztsRRPs="
+        //       }
+        //     ]
+        // }
+    
+        let timestamp = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+
+        let pre_hash = format!("{}{}{}", timestamp, Method::GET.as_str(), "/users/self/verify");
+
+        let signed_key = hmac::Key::new(hmac::HMAC_SHA256, secret_key.as_bytes());
+        let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
+
+        let login_cfg = LoginConfig {
+            api_key: api_key,
+            passphrase: passphrase,
+            timestamp: timestamp,
+            sign: signature,
+        };
+
+        let login_req = LoginRequest {
+            op: "login".to_string(),
+            args: vec![login_cfg]
+        };
+
+        if let Some((_, ref mut socket)) = self.socket {
+            socket.send(Message::Text(serde_json::to_string(&login_req).unwrap().into())).await?;
+            Ok(())
+        } else {
+            Err(Error::Msg("Not able to close the connection".to_string()))
+        }
     }
 
     pub async fn event_loop(&mut self, running: &AtomicBool) -> Result<()> {

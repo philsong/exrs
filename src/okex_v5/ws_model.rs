@@ -12,7 +12,6 @@ pub struct Arg {
     pub uly: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inst_type: Option<String>,
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -207,34 +206,7 @@ pub struct IndexCandlesticksEvent {}
 #[serde(rename_all = "camelCase")]
 pub struct StatusEvent {}
 
-// Private Channels Starts from here
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountEvent {}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PositionsEvent {}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct BalanceAndPositionEvent {}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct OrderEvent {}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AlgoOrdersEvent {}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct AdvanceAlgoOrdersEvent {}
-
-
-
-// private from here
+// Private Channels Starts from her
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountEvent {
@@ -350,14 +322,14 @@ pub struct Positions {
     pub vega_pa: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BalancePositionEvent {
     pub arg: Arg,
     pub data: Vec<BalancePosition>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BalancePosition {
     pub p_time: String,
@@ -366,7 +338,7 @@ pub struct BalancePosition {
     pub pos_data: Vec<PosDaum>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BalDaum {
     pub ccy: String,
@@ -374,7 +346,7 @@ pub struct BalDaum {
     pub u_time: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PosDaum {
     pub pos_id: String,
@@ -445,14 +417,14 @@ pub struct Order {
     pub msg: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AlgoOrdersEvent {
     pub arg: Arg,
     pub data: Vec<AlgoOrders>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AlgoOrders {
     pub inst_type: String,
@@ -482,14 +454,14 @@ pub struct AlgoOrders {
     pub c_time: String,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdvanceAlgoOrdersEvent {
     pub arg: Arg,
     pub data: Vec<AdvanceAlgoOrders>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdvanceAlgoOrders {
     pub actual_px: String,
