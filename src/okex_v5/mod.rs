@@ -1,6 +1,6 @@
 mod client;
 pub mod errors;
-mod util;
+pub mod util;
 
 pub mod account;
 pub mod api;

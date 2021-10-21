@@ -76,6 +76,8 @@ impl Account {
         symbol: S,
         qty: F,
         price: f64,
+        position_side: PositionSide,
+        client_order_id: S
     ) -> Result<TransactionResponse>
     where
         S: Into<String>,
@@ -85,7 +87,7 @@ impl Account {
             symbol: symbol.into(),
             trade_mode: TradeMode::Cross,
             currency: None,
-            client_order_id: None,
+            client_order_id: Some(client_order_id.into()),
             tag: None,
             side: OrderSide::Buy,
             position_side: Some(PositionSide::Long),
@@ -103,6 +105,8 @@ impl Account {
         symbol: S,
         qty: F,
         price: f64,
+        position_side: PositionSide,
+        client_order_id: S
     ) -> Result<TransactionResponse>
     where
         S: Into<String>,
@@ -112,10 +116,10 @@ impl Account {
             symbol: symbol.into(),
             trade_mode: TradeMode::Cross,
             currency: None,
-            client_order_id: None,
+            client_order_id: Some(client_order_id.into()),
             tag: None,
             side: OrderSide::Sell,
-            position_side: Some(PositionSide::Short),
+            position_side: Some(position_side),
             order_type: OrderType::Limit,
             qty: qty.into(),
             price: price.into(),

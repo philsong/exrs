@@ -19,6 +19,12 @@ pub struct Arg {
 pub enum WebsocketEvent {
     Instruments(Box<InstrumentsEvent>),
     Ticker(Box<TickerEvent>),
+    Account(Box<AccountEvent>),
+    Position(Box<PositionsEvent>),
+    BalancePosition(Box<BalancePositionEvent>),
+    Order(Box<OrderEvent>),
+    AlgoOrders(Box<AlgoOrdersEvent>),
+    AdvanceAlgoOrdersEvent(Box<AdvanceAlgoOrdersEvent>),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -240,29 +246,50 @@ pub struct Account {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Detail {
-    pub avail_bal: String,
-    pub avail_eq: String,
+    #[serde(with = "string_or_float")]
+    pub avail_bal: f64,
+    #[serde(with = "string_or_float")]
+    pub avail_eq: f64,
     pub ccy: String,
-    pub cash_bal: String,
-    pub u_time: String,
-    pub dis_eq: String,
-    pub eq: String,
-    pub eq_usd: String,
-    pub frozen_bal: String,
-    pub interest: String,
-    pub iso_eq: String,
-    pub liab: String,
-    pub max_loan: String,
-    pub mgn_ratio: String,
-    pub notional_lever: String,
-    pub ord_frozen: String,
-    pub upl: String,
-    pub upl_liab: String,
-    pub cross_liab: String,
-    pub iso_liab: String,
-    pub coin_usd_price: String,
-    pub stgy_eq: String,
-    pub iso_upl: String,
+    #[serde(with = "string_or_float")]
+    pub cash_bal: f64,
+    pub u_time: u64,
+    #[serde(with = "string_or_float")]
+    pub dis_eq: f64,
+    #[serde(with = "string_or_float")]
+    pub eq: f64,
+    #[serde(with = "string_or_float")]
+    pub eq_usd: f64,
+    #[serde(with = "string_or_float")]
+    pub frozen_bal: f64,
+    #[serde(with = "string_or_float")]
+    pub interest: f64,
+    #[serde(with = "string_or_float")]
+    pub iso_eq: f64,
+    #[serde(with = "string_or_float")]
+    pub liab: f64,
+    #[serde(with = "string_or_float")]
+    pub max_loan: f64,
+    #[serde(with = "string_or_float")]
+    pub mgn_ratio: f64,
+    #[serde(with = "string_or_float")]
+    pub notional_lever: f64,
+    #[serde(with = "string_or_float")]
+    pub ord_frozen: f64,
+    #[serde(with = "string_or_float")]
+    pub upl: f64,
+    #[serde(with = "string_or_float")]
+    pub upl_liab: f64,
+    #[serde(with = "string_or_float")]
+    pub cross_liab: f64,
+    #[serde(with = "string_or_float")]
+    pub iso_liab: f64,
+    #[serde(with = "string_or_float")]
+    pub coin_usd_price: f64,
+    #[serde(with = "string_or_float")]
+    pub stgy_eq: f64,
+    #[serde(with = "string_or_float")]
+    pub iso_upl: f64,
 }
 
 
