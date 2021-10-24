@@ -1,3 +1,5 @@
+use crate::okex_v5::util::get_timestamp;
+
 use super::config::*;
 use super::errors::*;
 use super::rest_model::OrderType;
@@ -12,7 +14,6 @@ use awc::{
     ws::{Codec, Frame},
     BoxedSocket, Client, ClientResponse,
 };
-use chrono::prelude::*;
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
 use ring::hmac;
 use reqwest::Method;
@@ -99,7 +100,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         //     ]
         // }
     
-        let timestamp = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
+        let timestamp = (get_timestamp().unwrap() / 1000).to_string();
 
         let pre_hash = format!("{}{}{}", timestamp, Method::GET.as_str(), "/users/self/verify");
 
