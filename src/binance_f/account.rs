@@ -246,7 +246,7 @@ impl FuturesAccount {
         };
         self.post_order(order).await
     }
-    
+
     /// Place a cancellation order
     pub async fn cancel_order(&self, o: OrderCancellation) -> Result<CanceledOrder> {
         let recv_window = o.recv_window.unwrap_or(self.recv_window);

@@ -292,7 +292,6 @@ pub struct Detail {
     pub iso_upl: f64,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PositionsEvent {

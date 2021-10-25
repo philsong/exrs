@@ -1,5 +1,5 @@
-use serde::Serializer;
 use serde::de::DeserializeOwned;
+use serde::Serializer;
 use std::collections::BTreeMap;
 use std::fmt;
 
@@ -63,9 +63,9 @@ pub struct Account {
 }
 
 impl Account {
-    async fn post_order<O>(&self, order: O) -> Result<TransactionResponse> 
+    async fn post_order<O>(&self, order: O) -> Result<TransactionResponse>
     where
-        O: serde::Serialize
+        O: serde::Serialize,
     {
         self.client.post_signed_p(API_V5_ORDER, order).await
     }
@@ -77,7 +77,7 @@ impl Account {
         qty: F,
         price: f64,
         position_side: PositionSide,
-        client_order_id: S
+        client_order_id: S,
     ) -> Result<TransactionResponse>
     where
         S: Into<String>,
@@ -106,7 +106,7 @@ impl Account {
         qty: F,
         price: f64,
         position_side: PositionSide,
-        client_order_id: S
+        client_order_id: S,
     ) -> Result<TransactionResponse>
     where
         S: Into<String>,
@@ -173,7 +173,11 @@ impl Account {
         self.post_order(order).await
     }
 
-    pub async fn close_position<S>(&self, symbol: S, pos_side: Option<PositionSide>) -> Result<TransactionResponse>
+    pub async fn close_position<S>(
+        &self,
+        symbol: S,
+        pos_side: Option<PositionSide>,
+    ) -> Result<TransactionResponse>
     where
         S: Into<String>,
     {
@@ -197,7 +201,10 @@ impl Account {
             .await
     }
 
-    pub async fn cancel_all_open_orders(&self, order: Vec<OrderCancellation>) -> Result<TransactionResponse> {
+    pub async fn cancel_all_open_orders(
+        &self,
+        order: Vec<OrderCancellation>,
+    ) -> Result<TransactionResponse> {
         let request_body = serde_json::to_string(&order)?;
         self.client
             .post_signed_p(API_V5_CANCEL_ORDER, request_body)

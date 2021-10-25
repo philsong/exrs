@@ -75,7 +75,6 @@ impl Default for MarginMode {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderRequest {
@@ -138,7 +137,6 @@ pub struct ClosePositionRequest {
     #[serde(rename = "ccy", skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
 }
-
 
 /// Order Cancellation Request
 /// perform an order cancellation for the account

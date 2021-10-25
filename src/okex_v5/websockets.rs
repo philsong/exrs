@@ -3,7 +3,7 @@ use crate::okex_v5::util::get_timestamp;
 use super::config::*;
 use super::errors::*;
 use super::rest_model::OrderType;
-use super::ws_model::{WebsocketResponse, LoginRequest, LoginConfig};
+use super::ws_model::{LoginConfig, LoginRequest, WebsocketResponse};
 
 use awc::ws::Message;
 use log::debug;
@@ -16,8 +16,8 @@ use awc::{
 };
 use bytes::Bytes;
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
-use ring::hmac;
 use reqwest::Method;
+use ring::hmac;
 use serde::{Deserialize, Serialize};
 use serde_json::from_slice;
 use tokio::sync::mpsc;
@@ -88,7 +88,12 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         &self.socket
     }
 
-    pub async fn login(&mut self, api_key: String, secret_key: String, passphrase: String) -> Result<()> {
+    pub async fn login(
+        &mut self,
+        api_key: String,
+        secret_key: String,
+        passphrase: String,
+    ) -> Result<()> {
         // {
         //     "op": "login",
         //     "args": [
@@ -100,10 +105,15 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         //       }
         //     ]
         // }
-    
+
         let timestamp = (get_timestamp().unwrap() / 1000).to_string();
 
-        let pre_hash = format!("{}{}{}", timestamp, Method::GET.as_str(), "/users/self/verify");
+        let pre_hash = format!(
+            "{}{}{}",
+            timestamp,
+            Method::GET.as_str(),
+            "/users/self/verify"
+        );
 
         let signed_key = hmac::Key::new(hmac::HMAC_SHA256, secret_key.as_bytes());
         let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
@@ -117,11 +127,15 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
 
         let login_req = LoginRequest {
             op: "login".to_string(),
-            args: vec![login_cfg]
+            args: vec![login_cfg],
         };
 
         if let Some((_, ref mut socket)) = self.socket {
-            socket.send(Message::Text(serde_json::to_string(&login_req).unwrap().into())).await?;
+            socket
+                .send(Message::Text(
+                    serde_json::to_string(&login_req).unwrap().into(),
+                ))
+                .await?;
             Ok(())
         } else {
             Err(Error::Msg("Not able to close the connection".to_string()))
