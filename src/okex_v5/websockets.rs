@@ -184,31 +184,6 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         debug!("ping: {:?}", Message::Ping(Bytes::from_static(b"")));
                     }
                 }
-
-                // let message = socket.next().await.unwrap()?;
-                // debug!("event_loop message - {:?}", message);
-                // match message {
-                //     Frame::Text(msg) => {
-                //         if msg.is_empty() {
-                //             return Ok(());
-                //         }
-                //         if let Ok(event) = from_slice(&msg) {
-                //             if let Err(_e) = self.sender.send(event).await {
-                //                 println!("SendError<WE>");
-                //             }
-                //         } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
-                //             println!("WebsocketResponse: {:?}", response);
-                //         } else {
-                //             return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
-                //         }
-                //     }
-                //     Frame::Ping(_) | Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {
-                //     }
-                //     Frame::Close(e) => {
-                //         return Err(Error::Msg(format!("Disconnected {:?}", e)));
-                //     }
-                // }
-                // actix_rt::task::yield_now().await;
             }
         }
         Ok(())
