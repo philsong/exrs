@@ -14,6 +14,7 @@ use awc::{
     ws::{Codec, Frame},
     BoxedSocket, Client, ClientResponse,
 };
+use bytes::Bytes;
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
 use ring::hmac;
 use reqwest::Method;
@@ -128,39 +129,79 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
     }
 
     pub async fn event_loop(&mut self, running: &AtomicBool) -> Result<()> {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(10000));
+
         while running.load(Ordering::Relaxed) {
             if let Some((_, ref mut socket)) = self.socket {
-                let message = socket.next().await.unwrap()?;
-                debug!("event_loop message - {:?}", message);
-                match message {
-                    Frame::Text(msg) => {
-                        if msg.is_empty() {
-                            return Ok(());
-                        }
-                        if let Ok(event) = from_slice(&msg) {
-                            if let Err(_e) = self.sender.send(event).await {
-                                println!("SendError<WE>");
-                            }
-                        } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
-                            println!("WebsocketResponse: {:?}", response);
-                        } else {
-                            return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
+                tokio::select! {
+                    message = socket.next() => {
+                        match message {
+                            Some(msg) => {
+                                let msg = msg?;
+                                match msg {
+                                    Frame::Text(text) => {
+                                        if text.is_empty() {
+                                            return Ok(());
+                                        }
+                                        if let Ok(event) = from_slice(&text) {
+                                            if let Err(_e) = self.sender.send(event).await {
+                                                println!("SendError<WE>");
+                                            }
+                                        } else if let Ok(response) = from_slice::<WebsocketResponse>(&text) {
+                                            println!("WebsocketResponse: {:?}", response);
+                                        } else {
+                                            return Err(Error::Msg(format!("Websocket Parse failed {:?}", text)));
+                                        }
+                                    },
+                                    Frame::Binary(_) | Frame::Continuation(_) | Frame::Ping(_) => {}
+                                    Frame::Pong(pong) => {
+                                        debug!("pong： {:?}", pong);
+                                    },
+                                    Frame::Close(e) => {
+                                        return Err(Error::Msg(format!("Disconnected {:?}", e)));
+                                    }
+                                }
+                            },
+                            None => todo!(),
                         }
                     }
-                    Frame::Ping(_) | Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {
-                    }
-                    Frame::Close(e) => {
-                        return Err(Error::Msg(format!("Disconnected {:?}", e)));
+                    _ = interval.tick() => {
+                        socket.send(Message::Ping(Bytes::from_static(b""))).await?;
+                        debug!("ping: {:?}", Message::Ping(Bytes::from_static(b"")));
                     }
                 }
-                actix_rt::task::yield_now().await;
+
+                // let message = socket.next().await.unwrap()?;
+                // debug!("event_loop message - {:?}", message);
+                // match message {
+                //     Frame::Text(msg) => {
+                //         if msg.is_empty() {
+                //             return Ok(());
+                //         }
+                //         if let Ok(event) = from_slice(&msg) {
+                //             if let Err(_e) = self.sender.send(event).await {
+                //                 println!("SendError<WE>");
+                //             }
+                //         } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
+                //             println!("WebsocketResponse: {:?}", response);
+                //         } else {
+                //             return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
+                //         }
+                //     }
+                //     Frame::Ping(_) | Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {
+                //     }
+                //     Frame::Close(e) => {
+                //         return Err(Error::Msg(format!("Disconnected {:?}", e)));
+                //     }
+                // }
+                // actix_rt::task::yield_now().await;
             }
         }
         Ok(())
     }
 
     // trade start from here
-    async fn place_order(&mut self, order: WSOrder) -> Result<()> {
+    pub async fn place_order(&mut self, order: WSOrder) -> Result<()> {
         if let Some((_, ref mut socket)) = self.socket {
             let ws_order = WSOrderRequest {
                 id: Uuid::new_v4().to_string(),
@@ -176,7 +217,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
         }
     }
 
-    async fn place_multipy_order(&mut self, orders: Vec<WSOrder>) -> Result<()> {
+    pub async fn place_multipy_order(&mut self, orders: Vec<WSOrder>) -> Result<()> {
         if let Some((_, ref mut socket)) = self.socket {
             let ws_orders = WSOrderRequest {
                 id: Uuid::new_v4().to_string(),
