@@ -1,4 +1,4 @@
-use super::rest_model::{string_or_float, string_or_uint};
+use super::rest_model::{string_or_float, string_or_u64};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -164,7 +164,7 @@ pub struct Ticker {
     pub vol_ccy24_h: f64,
     #[serde(rename = "vol24h", with = "string_or_float")]
     pub vol24_h: f64,
-    #[serde(rename = "ts", with = "string_or_uint")]
+    #[serde(rename = "ts", with = "string_or_u64")]
     pub timestamp: u64,
 }
 
@@ -253,6 +253,7 @@ pub struct Detail {
     pub ccy: String,
     #[serde(with = "string_or_float")]
     pub cash_bal: f64,
+    #[serde(with = "string_or_u64")]
     pub u_time: u64,
     #[serde(with = "string_or_float")]
     pub dis_eq: f64,

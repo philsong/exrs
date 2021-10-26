@@ -109,7 +109,8 @@ pub struct OrderRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionResponse {
-    pub code: String,
+    #[serde(with = "string_or_u16")]
+    pub code: u16,
     pub msg: String,
     pub data: Vec<Transaction>,
 }
@@ -121,7 +122,8 @@ pub struct Transaction {
     pub ord_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
-    pub s_code: String,
+    #[serde(with = "string_or_u16")]
+    pub s_code: u16,
     pub s_msg: String,
 }
 
@@ -234,7 +236,38 @@ pub(crate) mod string_or_float_opt {
     }
 }
 
-pub(crate) mod string_or_uint {
+pub(crate) mod string_or_u16 {
+    use std::fmt;
+
+    use serde::{de, Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        T: fmt::Display,
+        S: Serializer,
+    {
+        serializer.collect_str(value)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<u16, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrFloat {
+            String(String),
+            UInt(u16),
+        }
+
+        match StringOrFloat::deserialize(deserializer)? {
+            StringOrFloat::String(s) => s.parse().map_err(de::Error::custom),
+            StringOrFloat::UInt(i) => Ok(i),
+        }
+    }
+}
+
+pub(crate) mod string_or_u64 {
     use std::fmt;
 
     use serde::{de, Deserialize, Deserializer, Serializer};

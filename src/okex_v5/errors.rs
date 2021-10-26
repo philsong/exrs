@@ -4,10 +4,12 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 use super::ws_model::WebsocketEvent;
+use super::rest_model::string_or_u16;
 
 #[derive(Debug, Clone, Deserialize, Error)]
 #[error("code: {code}, msg: {msg}")]
 pub struct OkexContentError {
+    #[serde(with = "string_or_u16")]
     pub code: u16,
     pub msg: String,
 
