@@ -90,7 +90,7 @@ impl Account {
             client_order_id: Some(client_order_id.into()),
             tag: None,
             side: OrderSide::Buy,
-            position_side: Some(PositionSide::Long),
+            position_side: Some(position_side),
             order_type: OrderType::Limit,
             qty: qty.into(),
             price: price.into(),
@@ -187,17 +187,15 @@ impl Account {
             margin_mode: MarginMode::Cross,
             currency: None,
         };
-        let request_body = serde_json::to_string(&order)?;
         self.client
-            .post_signed_p(API_V5_CLOSE_POSITION, request_body)
+            .post_signed_p(API_V5_CLOSE_POSITION, &order)
             .await
     }
 
     /// Place a cancellation order
     pub async fn cancel_order(&self, order: OrderCancellation) -> Result<TransactionResponse> {
-        let request_body = serde_json::to_string(&order)?;
         self.client
-            .post_signed_p(API_V5_CANCEL_ORDER, request_body)
+            .post_signed_p(API_V5_CANCEL_ORDER, &order)
             .await
     }
 
@@ -205,9 +203,8 @@ impl Account {
         &self,
         order: Vec<OrderCancellation>,
     ) -> Result<TransactionResponse> {
-        let request_body = serde_json::to_string(&order)?;
         self.client
-            .post_signed_p(API_V5_CANCEL_ORDER, request_body)
+            .post_signed_p(API_V5_CANCEL_BATCH_ORDERS, &order)
             .await
     }
 }

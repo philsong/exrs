@@ -147,7 +147,7 @@ pub struct ClosePositionRequest {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderCancellation {
-    #[serde(rename = "inst_id")]
+    #[serde(rename = "instId")]
     pub symbol: String,
     #[serde(rename = "ordId", skip_serializing_if = "Option::is_none")]
     pub order_id: Option<String>,

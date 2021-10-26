@@ -88,12 +88,14 @@ impl Client {
     pub async fn post_signed(&self, endpoint: &str, request_body: String) -> Result<String> {
         let url = format!("{}{}", self.host, endpoint);
 
+        println!("post_signed - request_body: {}", request_body);
+
         let response = self
             .inner
             .clone()
             .post(url.as_str())
             .headers(self.build_signed_headers(true, Method::POST, endpoint, &request_body)?)
-            .body(request_body.clone())
+            .body(request_body)
             .send()
             .await?;
 
