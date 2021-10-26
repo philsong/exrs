@@ -176,7 +176,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                                     }
                                 }
                             },
-                            None => todo!(),
+                            None => continue,
                         }
                     }
                     _ = interval.tick() => {
