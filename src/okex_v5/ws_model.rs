@@ -19,6 +19,7 @@ pub struct Arg {
 pub enum WebsocketEvent {
     Instruments(Box<InstrumentsEvent>),
     Ticker(Box<TickerEvent>),
+    OrderBook(Box<OrderBookEvent>),
     Account(Box<AccountEvent>),
     Position(Box<PositionsEvent>),
     BalancePosition(Box<BalancePositionEvent>),
@@ -194,7 +195,20 @@ pub struct PriceLimitEvent {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct OrderBookEvent {}
+pub struct OrderBookEvent {
+    pub arg: Arg,
+    pub data: Vec<OrderBook>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderBook {
+    pub asks: Vec<Vec<String>>,
+    pub bids: Vec<Vec<String>>,
+    pub inst_id: String,
+    #[serde(rename = "ts", with = "string_or_u64")]
+    pub timestamp: u64,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
