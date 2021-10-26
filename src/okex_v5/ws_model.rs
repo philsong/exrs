@@ -1,4 +1,4 @@
-use super::rest_model::{string_or_float, string_or_u64};
+use super::rest_model::{string_or_float, string_or_float_opt, string_or_u64};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -325,6 +325,7 @@ pub struct Positions {
     pub liab_ccy: String,
     pub liq_px: String,
     pub margin: String,
+    pub mark_px: String,
     pub mgn_mode: String,
     pub mgn_ratio: String,
     pub mmr: String,
