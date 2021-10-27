@@ -130,7 +130,7 @@ pub struct Transaction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClosePositionRequest {
-    #[serde(rename = "inst_id")]
+    #[serde(rename = "instId")]
     pub symbol: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pos_side: Option<PositionSide>,
