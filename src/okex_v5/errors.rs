@@ -3,8 +3,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use thiserror::Error;
 
-use super::ws_model::WebsocketEvent;
 use super::rest_model::string_or_u16;
+use super::ws_model::WebsocketEvent;
 
 #[derive(Debug, Clone, Deserialize, Error)]
 #[error("code: {code}, msg: {msg}")]

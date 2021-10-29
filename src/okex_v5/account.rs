@@ -194,9 +194,7 @@ impl Account {
 
     /// Place a cancellation order
     pub async fn cancel_order(&self, order: OrderCancellation) -> Result<TransactionResponse> {
-        self.client
-            .post_signed_p(API_V5_CANCEL_ORDER, &order)
-            .await
+        self.client.post_signed_p(API_V5_CANCEL_ORDER, &order).await
     }
 
     pub async fn cancel_all_open_orders(
