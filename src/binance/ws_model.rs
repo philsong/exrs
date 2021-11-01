@@ -1,5 +1,5 @@
 use super::rest_model::{
-    string_or_float, Asks, Bids, OrderBook, OrderSide, OrderStatus, OrderType, TimeInForce,
+    string_or_float, Asks, Bids, OrderBookPartial, OrderSide, OrderStatus, OrderType, TimeInForce,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -271,7 +271,7 @@ pub struct CombinedStreamEvent<T> {
 #[serde(untagged)]
 pub enum WebsocketEventUntag {
     WebsocketEvent(WebsocketEvent),
-    Orderbook(Box<OrderBook>),
+    OrderBookPartial(Box<OrderBookPartial>),
     BookTicker(Box<BookTickerEvent>),
 }
 

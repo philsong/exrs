@@ -1,29 +1,26 @@
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
+use rust_decimal::Decimal;
 
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
 pub struct Asks {
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub qty: f64,
+    pub price: Decimal,
+    pub qty: Decimal,
 }
 
 impl Asks {
-    pub fn new(price: f64, qty: f64) -> Asks {
+    pub fn new(price: Decimal, qty: Decimal) -> Asks {
         Asks { price, qty }
     }
 }
 
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
 pub struct Bids {
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub qty: f64,
+    pub price: Decimal,
+    pub qty: Decimal,
 }
 
 impl Bids {
-    pub fn new(price: f64, qty: f64) -> Bids {
+    pub fn new(price: Decimal, qty: Decimal) -> Bids {
         Bids { price, qty }
     }
 }
@@ -215,7 +212,7 @@ pub struct Symbol {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct OrderBook {
+pub struct OrderBookPartial {
     pub last_update_id: u64,
     // Undocumented
     #[serde(rename = "E")]
@@ -527,6 +524,13 @@ pub struct MultiAssetsMarginResponse {
 #[serde(rename_all = "camelCase")]
 pub struct PairQuery {
     pub symbol: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DepthQuery {
+    pub symbol: String,
+    pub limit: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

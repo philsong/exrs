@@ -1,4 +1,29 @@
 use serde::{Deserialize, Serialize};
+use rust_decimal::Decimal;
+
+#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+pub struct Asks {
+    pub price: Decimal,
+    pub qty: Decimal,
+}
+
+impl Asks {
+    pub fn new(price: Decimal, qty: Decimal) -> Asks {
+        Asks { price, qty }
+    }
+}
+
+#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+pub struct Bids {
+    pub price: Decimal,
+    pub qty: Decimal,
+}
+
+impl Bids {
+    pub fn new(price: Decimal, qty: Decimal) -> Bids {
+        Bids { price, qty }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

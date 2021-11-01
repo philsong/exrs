@@ -34,15 +34,16 @@ pub struct FuturesMarket {
 
 impl FuturesMarket {
     // Order book (Default 100; max 1000)
-    pub async fn get_depth<S>(&self, symbol: S) -> Result<OrderBook>
+    pub async fn get_depth<S>(&self, symbol: S, limit: S) -> Result<OrderBookPartial>
     where
         S: Into<String>,
     {
         self.client
             .get_d(
                 "/fapi/v1/depth",
-                Some(PairQuery {
+                Some(DepthQuery {
                     symbol: symbol.into(),
+                    limit: limit.into(),
                 }),
             )
             .await

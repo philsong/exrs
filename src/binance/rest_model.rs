@@ -1,3 +1,6 @@
+use serde::{Serialize, Deserialize};
+use rust_decimal::Decimal;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerTime {
@@ -255,26 +258,34 @@ pub struct TestResponse {}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct OrderBook {
+pub struct OrderBookPartial {
     pub last_update_id: u64,
     pub bids: Vec<Bids>,
     pub asks: Vec<Asks>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Bids {
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub qty: f64,
+#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+pub struct Asks {
+    pub price: Decimal,
+    pub qty: Decimal,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Asks {
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub qty: f64,
+impl Asks {
+    pub fn new(price: Decimal, qty: Decimal) -> Asks {
+        Asks { price, qty }
+    }
+}
+
+#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
+pub struct Bids {
+    pub price: Decimal,
+    pub qty: Decimal,
+}
+
+impl Bids {
+    pub fn new(price: Decimal, qty: Decimal) -> Bids {
+        Bids { price, qty }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

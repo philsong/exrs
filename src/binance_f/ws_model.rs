@@ -1,4 +1,4 @@
-use super::rest_model::string_or_float;
+use super::rest_model::{Asks, Bids, string_or_float};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -75,28 +75,6 @@ pub struct OrderBook {
     pub last_update_id: u64,
     pub bids: Vec<Bids>,
     pub asks: Vec<Asks>,
-}
-
-#[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
-pub struct Bids {
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub qty: f64,
-}
-
-impl Bids {
-    pub fn new(price: f64, qty: f64) -> Bids {
-        Bids { price, qty }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Asks {
-    #[serde(with = "string_or_float")]
-    pub price: f64,
-    #[serde(with = "string_or_float")]
-    pub qty: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -564,8 +542,7 @@ pub struct DepthOrderBookEvent {
     #[serde(rename = "u")]
     pub final_update_id: u64,
     #[serde(rename = "pu")]
-    #[serde(default)]
-    pub previous_final_update_id: Option<u64>,
+    pub previous_final_update_id: u64,
     #[serde(rename = "b")]
     pub bids: Vec<Bids>,
     #[serde(rename = "a")]
