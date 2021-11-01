@@ -1,6 +1,7 @@
 use csv::Writer;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use env_logger::Builder;
-use log::{warn};
+use log::{info, warn};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::BTreeMap;
@@ -48,10 +49,10 @@ impl Orderbook {
         let asks_qty = self.asks.values().cloned().take(depth).collect();
         let bids_qty = self.bids.values().cloned().rev().take(depth).collect();
 
-        println!("asks_price {:?}", asks_price);
-        println!("bids_price {:?}", bids_price);
-        println!("asks_qty {:?}", asks_qty);
-        println!("bids_qty {:?}", bids_qty);
+        info!("asks_price {:?}", asks_price);
+        info!("bids_price {:?}", bids_price);
+        info!("asks_qty {:?}", asks_qty);
+        info!("bids_qty {:?}", bids_qty);
         
         Some((&self.symbol, &self.timestamp, asks_price, bids_price, asks_qty, bids_qty))
     }
@@ -161,24 +162,28 @@ impl WebSocketHandler {
 async fn main() {
     Builder::new().parse_default_env().init();
 
-    let api_key_user = Some("YOUR_KEY".into());
-    let market: FuturesMarket = BinanceF::new(api_key_user, None);
+    let symbol = "ethusdt";
+    let mut tmr_dt = Utc::today().and_hms(23,59,59);
 
-    let file_path = std::path::Path::new("test.csv");
+    let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
+    let file_path = std::path::Path::new(&file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
 
+    let api_key_user = Some("YOUR_KEY".into());
+    let market: FuturesMarket = BinanceF::new(api_key_user, None);
+
     let keep_running = AtomicBool::new(true);
-    let depth: String = "ethusdt@depth@100ms".to_string();
-    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+
+    let depth = format!("{}@depth@100ms", symbol);
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1000);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
     let mut orderbook = Orderbook::new("ethusdt".to_string());
 
     web_socket.connect(&depth).await.unwrap();
 
     actix_rt::spawn(async move {
-
-        let partial_init: OrderBookPartial = market.get_custom_depth("ethusdt", 1000).await.unwrap();
+        let partial_init: OrderBookPartial = market.get_custom_depth(symbol, 1000).await.unwrap();
         orderbook.partial(&partial_init);
 
         loop {
@@ -189,15 +194,23 @@ async fn main() {
             } else if msg.first_update_id <= partial_init.last_update_id && msg.final_update_id >= partial_init.last_update_id {
                 orderbook.update(&msg)
             } else if orderbook.verify(msg.previous_final_update_id, false) {
-                println!("verfiy passed");
+                info!("verfiy passed");
                 orderbook.update(&msg)
             } else {
-                println!("verfiy failed");
-                let partial_init: OrderBookPartial = market.get_custom_depth("ethusdt", 1000).await.unwrap();
+                warn!("verfiy failed");
+                let partial_init: OrderBookPartial = market.get_custom_depth(symbol, 1000).await.unwrap();
                 orderbook.partial(&partial_init);
             }
 
             let event = orderbook.get_depth(20).unwrap();
+
+            if DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0), Utc) > tmr_dt {
+                tmr_dt = Utc::today().and_hms(23,59,59);
+                let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
+                let file_path = std::path::Path::new(&file_name);
+                let local_wrt = csv::Writer::from_path(file_path).unwrap();
+                web_socket_handler = WebSocketHandler::new(local_wrt);
+            }
             
             if let Err(error) = web_socket_handler.write_to_file(&event) {
                 warn!("{}", error);
