@@ -16,7 +16,36 @@ use exrs::binance_f::market::*;
 use exrs::binance_f::rest_model::OrderBookPartial;
 use exrs::binance_f::util::get_timestamp;
 use exrs::binance_f::websockets::*;
-use exrs::binance_f::ws_model::DepthOrderBookEvent;
+use exrs::binance_f::ws_model::{AggrTradesEvent, DepthOrderBookEvent};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub struct Config {
+    pub server_id: String,
+    pub log: Log,
+    pub data: Data,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Log {
+    pub console: bool,
+    pub level: String,
+    pub path: String,
+    pub name: String,
+    pub clear: bool,
+    pub backup_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Data {
+    pub symbol: Vec<String>,
+    pub channels: Vec<String>,
+    pub silent: bool,
+    pub platform: String,
+    pub influx_database: bool,
+    pub file_format: String,
+    pub file_url: String,
+}
 
 type Record<'a> = (
     &'a str,
@@ -26,6 +55,16 @@ type Record<'a> = (
     Vec<Decimal>,
     Vec<Decimal>,
 );
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct Record {
+//     pub symbol: String,
+//     pub timestamp: u64,
+//     pub asks_price: Vec<Decimal>,
+//     pub bids_price: Vec<Decimal>,
+//     pub asks_qty: Vec<Decimal>,
+//     pub bids_qty: Vec<Decimal>,
+// }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Orderbook {
@@ -168,45 +207,48 @@ impl WebSocketHandler {
         WebSocketHandler { wrt: local_wrt }
     }
 
-    // serialize DayTickerEvent as CSV records
-    pub fn write_to_file(&mut self, event: &Record) -> Result<(), Box<dyn Error>> {
+    // serialize Depth as CSV records
+    pub fn write_depth_to_file(&mut self, event: &Record) -> Result<(), Box<dyn Error>> {
+        self.wrt.serialize(event)?;
+
+        Ok(())
+    }
+
+    // serialize Trades as CSV records
+    pub fn write_trades_to_file(&mut self, event: &AggrTradesEvent) -> Result<(), Box<dyn Error>> {
         self.wrt.serialize(event)?;
 
         Ok(())
     }
 }
 
-#[actix_rt::main]
-async fn main() {
-    Builder::new().parse_default_env().init();
-
-    let symbol = "ethusdt";
+async fn run_depth(symbol: String) {
     let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
-
+    
     let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
     let file_path = std::path::Path::new(&file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
-
+    
     let api_key_user = Some("YOUR_KEY".into());
     let market: FuturesMarket = BinanceF::new(api_key_user, None);
-
+    
     let keep_running = AtomicBool::new(true);
-
+    
     let depth = format!("{}@depth@100ms", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(1000);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
     let mut orderbook = Orderbook::new("ethusdt".to_string());
-
+    
     web_socket.connect(&depth).await.unwrap();
-
+    
     actix_rt::spawn(async move {
-        let partial_init: OrderBookPartial = market.get_custom_depth(symbol, 1000).await.unwrap();
+        let partial_init: OrderBookPartial = market.get_custom_depth(symbol.clone(), 1000).await.unwrap();
         orderbook.partial(&partial_init);
-
+    
         loop {
             let msg = rx.recv().await.unwrap();
-
+    
             if msg.final_update_id < partial_init.last_update_id {
                 continue;
             } else if msg.first_update_id <= partial_init.last_update_id
@@ -219,12 +261,12 @@ async fn main() {
             } else {
                 warn!("verfiy failed");
                 let partial_init: OrderBookPartial =
-                    market.get_custom_depth(symbol, 1000).await.unwrap();
+                    market.get_custom_depth(symbol.clone(), 1000).await.unwrap();
                 orderbook.partial(&partial_init);
             }
-
+    
             let event = orderbook.get_depth(20).unwrap();
-
+    
             if DateTime::<Utc>::from_utc(
                 NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0),
                 Utc,
@@ -236,18 +278,106 @@ async fn main() {
                 let local_wrt = csv::Writer::from_path(file_path).unwrap();
                 web_socket_handler = WebSocketHandler::new(local_wrt);
             }
-
-            if let Err(error) = web_socket_handler.write_to_file(&event) {
+    
+            if let Err(error) = web_socket_handler.write_depth_to_file(&event) {
                 warn!("{}", error);
             };
         }
     });
-
+    
     while let Err(e) = web_socket.event_loop(&keep_running).await {
-        warn!("web_socket event_loop Error: {}, starting reconnect...", e);
-
+        warn!("depth web_socket event_loop Error: {}, starting reconnect...", e);
+    
         while let Err(e) = web_socket.connect(&depth).await {
-            warn!("web_socket connect Error: {}, try again...", e);
+            warn!("depth web_socket connect Error: {}, try again...", e);
         }
+    }
+}
+
+async fn run_trades(symbol: String) {
+    let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
+    
+    let file_name = format!("{}-{}-{:?}.csv", symbol, "trades", Utc::today());
+    let file_path = std::path::Path::new(&file_name);
+    let local_wrt = csv::Writer::from_path(file_path).unwrap();
+    let mut web_socket_handler = WebSocketHandler::new(local_wrt);
+    
+    let api_key_user = Some("YOUR_KEY".into());
+    let market: FuturesMarket = BinanceF::new(api_key_user, None);
+    
+    let keep_running = AtomicBool::new(true);
+    
+    let agg_trade = format!("{}@aggTrade", symbol);
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1000);
+    let mut web_socket: FuturesWebSockets<AggrTradesEvent> = FuturesWebSockets::new(tx);
+    
+    web_socket.connect(&agg_trade).await.unwrap();
+    
+    actix_rt::spawn(async move {
+        loop {
+            let event = rx.recv().await.unwrap();
+
+            if DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp((event.event_time / 1000) as i64, 0),
+                Utc,
+            ) > tmr_dt
+            {
+                tmr_dt = Utc::today().and_hms(23, 59, 59);
+                let file_name = format!("{}-{}-{:?}.csv", symbol, "trades", Utc::today());
+                let file_path = std::path::Path::new(&file_name);
+                let local_wrt = csv::Writer::from_path(file_path).unwrap();
+                web_socket_handler = WebSocketHandler::new(local_wrt);
+            }
+    
+            if let Err(error) = web_socket_handler.write_trades_to_file(&event) {
+                warn!("{}", error);
+            };
+        }
+    });
+    
+    while let Err(e) = web_socket.event_loop(&keep_running).await {
+        warn!("trades web_socket event_loop Error: {}, starting reconnect...", e);
+    
+        while let Err(e) = web_socket.connect(&agg_trade).await {
+            warn!("trades web_socket connect Error: {}, try again...", e);
+        }
+    }
+}
+
+#[actix_rt::main]
+async fn main() {
+    Builder::new().parse_default_env().init();
+
+    let args: Vec<String> = std::env::args().collect();
+    let file = std::fs::File::open(&args[1]).expect("file should open read only");
+    let c: Config = serde_json::from_reader(file).expect("file shoud be proper json");
+
+    let mut tasks = Vec::new();
+    for symbol in c.data.symbol.iter() {
+        for ch in c.data.channels.iter() {
+            match ch.as_str() {
+                "depth@100ms" => {
+                    let symbol = symbol.clone();
+                    let task = actix_rt::spawn(async move {
+                        run_depth(symbol).await
+                    });
+                    tasks.push(task);
+                }
+                "aggTrade" => {
+                    let symbol = symbol.clone();
+                    let task = actix_rt::spawn(async move {
+                        run_trades(symbol).await
+                    });
+                    tasks.push(task);
+                }
+                _ => {
+                    warn!("Error: channel type not support!")
+                }
+            }
+        }
+    }
+
+    for task in tasks {
+        task.await.unwrap();  
     }
 }

@@ -1,0 +1,20 @@
+{
+    "SERVER_ID": "binance_f_link_market",
+    "LOG": {
+        "console": true,
+        "level": "INFO",
+        "path": "./log/",
+        "name": "binance_f_link_market.log",
+        "clear": false,
+        "backup_count": 5
+    },
+	"DATA": {
+		"symbol": ["btcusdt", "dogeusdt"],
+        "channels": ["depth@100ms", "aggTrade"],
+        "silent": true,
+		"platform": "BinanceF",
+        "influx_database": false,
+        "file_format": "csv",
+		"file_url": "/media/zp/512GB/caspain"
+	}
+}
