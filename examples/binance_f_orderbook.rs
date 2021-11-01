@@ -17,7 +17,7 @@ use exrs::binance_f::rest_model::OrderBookPartial;
 use exrs::binance_f::ws_model::DepthOrderBookEvent;
 use exrs::binance_f::util::get_timestamp;
 
-type Record<'a> = (&'a str, &'a u64, Vec<(&'a Decimal, &'a Decimal)>, Vec<(&'a Decimal, &'a Decimal)>);
+type Record<'a> = (&'a str, &'a u64, Vec<Decimal>, Vec<Decimal>, Vec<Decimal>, Vec<Decimal>);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Orderbook {
@@ -41,12 +41,19 @@ impl Orderbook {
     }
 
     pub fn get_depth(&mut self, depth: usize) -> Option<Record> {
-        let asks: Vec<(&Decimal, &Decimal)> = self.asks.iter().take(depth).rev().collect();
-        let bids: Vec<(&Decimal, &Decimal)> = self.bids.iter().rev().take(depth).collect();
+        // let asks: Vec<(Decimal, Decimal)> = self.asks.iter().take(depth).rev().collect();
+        // let bids: Vec<(Decimal, Decimal)> = self.bids.iter().rev().take(depth).collect();
+        let asks_price = self.asks.keys().cloned().take(depth).collect();
+        let bids_price = self.bids.keys().cloned().rev().take(depth).collect();
+        let asks_qty = self.asks.values().cloned().take(depth).collect();
+        let bids_qty = self.bids.values().cloned().rev().take(depth).collect();
 
-        println!("asks {:?}", asks);
-        println!("bids {:?}", bids);
-        Some((&self.symbol, &self.timestamp, asks, bids))
+        println!("asks_price {:?}", asks_price);
+        println!("bids_price {:?}", bids_price);
+        println!("asks_qty {:?}", asks_qty);
+        println!("bids_qty {:?}", bids_qty);
+        
+        Some((&self.symbol, &self.timestamp, asks_price, bids_price, asks_qty, bids_qty))
     }
 
     pub fn partial(&mut self, data: &OrderBookPartial) {
@@ -81,8 +88,8 @@ impl Orderbook {
         }
     }
 
-    pub fn verify(&mut self, pu_id: u64, check_bid_ask_overlapping: Option<bool>) -> bool {
-        if let Some(true) = check_bid_ask_overlapping {
+    pub fn verify(&mut self, pu_id: u64, check_bid_ask_overlapping: bool) -> bool {
+        if check_bid_ask_overlapping {
             if self.bids.len() > 0 && self.asks.len() > 0 {
                 if self.best_bid().unwrap().0 >= self.best_ask().unwrap().0 {
                     warn!("best bid {} >= best ask {}", self.best_bid().unwrap().0, self.best_ask().unwrap().0);
@@ -181,7 +188,7 @@ async fn main() {
                 continue
             } else if msg.first_update_id <= partial_init.last_update_id && msg.final_update_id >= partial_init.last_update_id {
                 orderbook.update(&msg)
-            } else if orderbook.verify(msg.previous_final_update_id, Some(true)) {
+            } else if orderbook.verify(msg.previous_final_update_id, false) {
                 println!("verfiy passed");
                 orderbook.update(&msg)
             } else {
@@ -190,14 +197,11 @@ async fn main() {
                 orderbook.partial(&partial_init);
             }
 
-
             let event = orderbook.get_depth(20).unwrap();
-
             
             if let Err(error) = web_socket_handler.write_to_file(&event) {
-                println!("{}", error);
+                warn!("{}", error);
             };
-            // println!("orderbook: {:?}", orderbook);
         }
     });
 
