@@ -154,7 +154,6 @@ async fn main() {
     let api_key_user = Some("YOUR_KEY".into());
     let market: FuturesMarket = BinanceF::new(api_key_user, None);
 
-
     let file_path = std::path::Path::new("test.csv");
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
@@ -169,7 +168,7 @@ async fn main() {
 
     actix_rt::spawn(async move {
 
-        let partial_init: OrderBookPartial = market.get_depth("ethusdt", "1000").await.unwrap();
+        let partial_init: OrderBookPartial = market.get_custom_depth("ethusdt", 1000).await.unwrap();
         orderbook.partial(&partial_init);
 
         loop {
@@ -184,7 +183,7 @@ async fn main() {
                 orderbook.update(&msg)
             } else {
                 println!("verfiy failed");
-                let partial_init: OrderBookPartial = market.get_depth("ethusdt", "1000").await.unwrap();
+                let partial_init: OrderBookPartial = market.get_custom_depth("ethusdt", 1000).await.unwrap();
                 orderbook.partial(&partial_init);
             }
 

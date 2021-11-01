@@ -38,13 +38,13 @@ impl Market {
     /// let orderbook = tokio_test::block_on(market.get_depth("BTCUSDT".to_string()));
     /// assert!(orderbook.is_ok(), "{:?}", orderbook);
     /// ```
-    pub async fn get_depth<S>(&self, symbol: S) -> Result<OrderBook>
+    pub async fn get_depth<S>(&self, symbol: S) -> Result<OrderBookPartial>
     where
         S: Into<String>,
     {
         let request = self.symbol_request(symbol);
         let data = self.client.get(API_V3_DEPTH, &request).await?;
-        let order_book: OrderBook = from_str(data.as_str())?;
+        let order_book: OrderBookPartial = from_str(data.as_str())?;
 
         Ok(order_book)
     }
@@ -60,7 +60,7 @@ impl Market {
     /// let bids_len = orderbook.unwrap().bids.len();
     /// assert_eq!(bids_len, 50);
     /// ```
-    pub async fn get_custom_depth<S>(&self, symbol: S, limit: u16) -> Result<OrderBook>
+    pub async fn get_custom_depth<S>(&self, symbol: S, limit: u16) -> Result<OrderBookPartial>
     where
         S: Into<String>,
     {
@@ -70,7 +70,7 @@ impl Market {
 
         let request = build_request(&parameters);
         let data = self.client.get(API_V3_DEPTH, &request).await?;
-        let order_book: OrderBook = from_str(data.as_str())?;
+        let order_book: OrderBookPartial = from_str(data.as_str())?;
 
         Ok(order_book)
     }

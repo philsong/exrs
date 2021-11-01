@@ -530,7 +530,7 @@ pub struct PairQuery {
 #[serde(rename_all = "camelCase")]
 pub struct DepthQuery {
     pub symbol: String,
-    pub limit: String,
+    pub limit: u16,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
