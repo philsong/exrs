@@ -1,4 +1,4 @@
-use super::rest_model::{Asks, Bids, string_or_float};
+use super::rest_model::{string_or_float, Asks, Bids};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

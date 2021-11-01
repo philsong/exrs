@@ -1,24 +1,31 @@
-use csv::Writer;
 use chrono::{DateTime, NaiveDateTime, Utc};
+use csv::Writer;
 use env_logger::Builder;
 use log::{info, warn};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::Debug;
 use std::fs::File;
 use std::sync::atomic::AtomicBool;
-use serde::{Deserialize, Serialize};
 
 use exrs::binance_f::api::*;
 use exrs::binance_f::market::*;
-use exrs::binance_f::websockets::*;
 use exrs::binance_f::rest_model::OrderBookPartial;
-use exrs::binance_f::ws_model::DepthOrderBookEvent;
 use exrs::binance_f::util::get_timestamp;
+use exrs::binance_f::websockets::*;
+use exrs::binance_f::ws_model::DepthOrderBookEvent;
 
-type Record<'a> = (&'a str, &'a u64, Vec<Decimal>, Vec<Decimal>, Vec<Decimal>, Vec<Decimal>);
+type Record<'a> = (
+    &'a str,
+    &'a u64,
+    Vec<Decimal>,
+    Vec<Decimal>,
+    Vec<Decimal>,
+    Vec<Decimal>,
+);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Orderbook {
@@ -31,7 +38,7 @@ pub struct Orderbook {
 
 impl Orderbook {
     pub fn new(symbol: String) -> Orderbook {
-        let now =  get_timestamp().unwrap();
+        let now = get_timestamp().unwrap();
         Orderbook {
             symbol,
             timestamp: now,
@@ -53,8 +60,15 @@ impl Orderbook {
         info!("bids_price {:?}", bids_price);
         info!("asks_qty {:?}", asks_qty);
         info!("bids_qty {:?}", bids_qty);
-        
-        Some((&self.symbol, &self.timestamp, asks_price, bids_price, asks_qty, bids_qty))
+
+        Some((
+            &self.symbol,
+            &self.timestamp,
+            asks_price,
+            bids_price,
+            asks_qty,
+            bids_qty,
+        ))
     }
 
     pub fn partial(&mut self, data: &OrderBookPartial) {
@@ -74,7 +88,7 @@ impl Orderbook {
         self.final_update_id = data.final_update_id;
         self.timestamp = data.event_time;
         for bid in &data.bids {
-            if bid.qty == dec!(0){
+            if bid.qty == dec!(0) {
                 self.bids.remove(&bid.price);
             } else {
                 self.bids.insert(bid.price, bid.qty);
@@ -93,8 +107,12 @@ impl Orderbook {
         if check_bid_ask_overlapping {
             if self.bids.len() > 0 && self.asks.len() > 0 {
                 if self.best_bid().unwrap().0 >= self.best_ask().unwrap().0 {
-                    warn!("best bid {} >= best ask {}", self.best_bid().unwrap().0, self.best_ask().unwrap().0);
-                    return false
+                    warn!(
+                        "best bid {} >= best ask {}",
+                        self.best_bid().unwrap().0,
+                        self.best_ask().unwrap().0
+                    );
+                    return false;
                 }
             }
         }
@@ -146,24 +164,24 @@ struct WebSocketHandler {
 }
 
 impl WebSocketHandler {
-    pub fn new(local_wrt: Writer<File>) -> Self { WebSocketHandler { wrt: local_wrt } }
+    pub fn new(local_wrt: Writer<File>) -> Self {
+        WebSocketHandler { wrt: local_wrt }
+    }
 
     // serialize DayTickerEvent as CSV records
     pub fn write_to_file(&mut self, event: &Record) -> Result<(), Box<dyn Error>> {
-
         self.wrt.serialize(event)?;
-        
+
         Ok(())
     }
 }
-
 
 #[actix_rt::main]
 async fn main() {
     Builder::new().parse_default_env().init();
 
     let symbol = "ethusdt";
-    let mut tmr_dt = Utc::today().and_hms(23,59,59);
+    let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
 
     let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
     let file_path = std::path::Path::new(&file_name);
@@ -190,28 +208,35 @@ async fn main() {
             let msg = rx.recv().await.unwrap();
 
             if msg.final_update_id < partial_init.last_update_id {
-                continue
-            } else if msg.first_update_id <= partial_init.last_update_id && msg.final_update_id >= partial_init.last_update_id {
+                continue;
+            } else if msg.first_update_id <= partial_init.last_update_id
+                && msg.final_update_id >= partial_init.last_update_id
+            {
                 orderbook.update(&msg)
             } else if orderbook.verify(msg.previous_final_update_id, false) {
                 info!("verfiy passed");
                 orderbook.update(&msg)
             } else {
                 warn!("verfiy failed");
-                let partial_init: OrderBookPartial = market.get_custom_depth(symbol, 1000).await.unwrap();
+                let partial_init: OrderBookPartial =
+                    market.get_custom_depth(symbol, 1000).await.unwrap();
                 orderbook.partial(&partial_init);
             }
 
             let event = orderbook.get_depth(20).unwrap();
 
-            if DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0), Utc) > tmr_dt {
-                tmr_dt = Utc::today().and_hms(23,59,59);
+            if DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0),
+                Utc,
+            ) > tmr_dt
+            {
+                tmr_dt = Utc::today().and_hms(23, 59, 59);
                 let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
                 let file_path = std::path::Path::new(&file_name);
                 let local_wrt = csv::Writer::from_path(file_path).unwrap();
                 web_socket_handler = WebSocketHandler::new(local_wrt);
             }
-            
+
             if let Err(error) = web_socket_handler.write_to_file(&event) {
                 warn!("{}", error);
             };
