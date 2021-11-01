@@ -5,6 +5,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::fmt::Debug;
 use std::fs::File;
 use std::sync::atomic::AtomicBool;
 use serde::{Deserialize, Serialize};
@@ -15,6 +16,8 @@ use exrs::binance_f::websockets::*;
 use exrs::binance_f::rest_model::OrderBookPartial;
 use exrs::binance_f::ws_model::DepthOrderBookEvent;
 use exrs::binance_f::util::get_timestamp;
+
+type Record<'a> = (&'a str, &'a u64, Vec<(&'a Decimal, &'a Decimal)>, Vec<(&'a Decimal, &'a Decimal)>);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Orderbook {
@@ -37,13 +40,13 @@ impl Orderbook {
         }
     }
 
-    pub fn get_depth(&mut self, depth: usize) {
-        for (i, (key, value)) in self.asks.iter().take(depth).enumerate().rev() {
-            println!("asks{}: {} {}", i, key, value);
-        }
-        for (i, (key, value)) in self.bids.iter().rev().take(depth).enumerate() {
-            println!("bids{}: {} {}", i, key, value);
-        }
+    pub fn get_depth(&mut self, depth: usize) -> Option<Record> {
+        let asks: Vec<(&Decimal, &Decimal)> = self.asks.iter().take(depth).rev().collect();
+        let bids: Vec<(&Decimal, &Decimal)> = self.bids.iter().rev().take(depth).collect();
+
+        println!("asks {:?}", asks);
+        println!("bids {:?}", bids);
+        Some((&self.symbol, &self.timestamp, asks, bids))
     }
 
     pub fn partial(&mut self, data: &OrderBookPartial) {
@@ -78,7 +81,16 @@ impl Orderbook {
         }
     }
 
-    pub fn verify(&mut self, pu_id: u64) -> bool {
+    pub fn verify(&mut self, pu_id: u64, check_bid_ask_overlapping: Option<bool>) -> bool {
+        if let Some(true) = check_bid_ask_overlapping {
+            if self.bids.len() > 0 && self.asks.len() > 0 {
+                if self.best_bid().unwrap().0 >= self.best_ask().unwrap().0 {
+                    warn!("best bid {} >= best ask {}", self.best_bid().unwrap().0, self.best_ask().unwrap().0);
+                    return false
+                }
+            }
+        }
+
         self.final_update_id == pu_id
     }
 
@@ -119,15 +131,6 @@ impl Orderbook {
     pub fn best_bid_and_ask(&mut self) -> Option<((Decimal, Decimal), (Decimal, Decimal))> {
         Some((self.best_bid()?, self.best_ask()?))
     }
-
-    pub fn check_bid_ask_overlapping(&mut self) {
-        if self.bids.len() > 0 && self.asks.len() > 0 {
-
-            if self.best_bid().unwrap().0 >= self.best_ask().unwrap().0 {
-                println!("best bid {} >= best ask {}", self.best_bid().unwrap().0, self.best_ask().unwrap().0);
-            }
-        }
-    }
 }
 
 struct WebSocketHandler {
@@ -138,7 +141,7 @@ impl WebSocketHandler {
     pub fn new(local_wrt: Writer<File>) -> Self { WebSocketHandler { wrt: local_wrt } }
 
     // serialize DayTickerEvent as CSV records
-    pub fn write_to_file(&mut self, event: &Orderbook) -> Result<(), Box<dyn Error>> {
+    pub fn write_to_file(&mut self, event: &Record) -> Result<(), Box<dyn Error>> {
 
         self.wrt.serialize(event)?;
         
@@ -178,7 +181,7 @@ async fn main() {
                 continue
             } else if msg.first_update_id <= partial_init.last_update_id && msg.final_update_id >= partial_init.last_update_id {
                 orderbook.update(&msg)
-            } else if orderbook.verify(msg.previous_final_update_id) {
+            } else if orderbook.verify(msg.previous_final_update_id, Some(true)) {
                 println!("verfiy passed");
                 orderbook.update(&msg)
             } else {
@@ -187,12 +190,13 @@ async fn main() {
                 orderbook.partial(&partial_init);
             }
 
-            // if let Err(error) = web_socket_handler.write_to_file(&orderbook) {
-            //     println!("{}", error);
-            // };
-            orderbook.get_depth(20);
-            orderbook.check_bid_ask_overlapping();
 
+            let event = orderbook.get_depth(20).unwrap();
+
+            
+            if let Err(error) = web_socket_handler.write_to_file(&event) {
+                println!("{}", error);
+            };
             // println!("orderbook: {:?}", orderbook);
         }
     });
