@@ -222,11 +222,11 @@ impl WebSocketHandler {
     }
 }
 
-async fn run_depth(symbol: String) {
+async fn run_depth(file_url: String, symbol: String) {
     let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
     
     let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
-    let file_path = std::path::Path::new(&file_name);
+    let file_path = std::path::Path::new(&file_url).join(file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
     
@@ -274,7 +274,7 @@ async fn run_depth(symbol: String) {
             {
                 tmr_dt = Utc::today().and_hms(23, 59, 59);
                 let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
-                let file_path = std::path::Path::new(&file_name);
+                let file_path = std::path::Path::new(&file_url).join(file_name);
                 let local_wrt = csv::Writer::from_path(file_path).unwrap();
                 web_socket_handler = WebSocketHandler::new(local_wrt);
             }
@@ -294,11 +294,11 @@ async fn run_depth(symbol: String) {
     }
 }
 
-async fn run_trades(symbol: String) {
+async fn run_trades(file_url: String, symbol: String) {
     let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
     
     let file_name = format!("{}-{}-{:?}.csv", symbol, "trades", Utc::today());
-    let file_path = std::path::Path::new(&file_name);
+    let file_path = std::path::Path::new(&file_url).join(file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
     
@@ -324,7 +324,7 @@ async fn run_trades(symbol: String) {
             {
                 tmr_dt = Utc::today().and_hms(23, 59, 59);
                 let file_name = format!("{}-{}-{:?}.csv", symbol, "trades", Utc::today());
-                let file_path = std::path::Path::new(&file_name);
+                let file_path = std::path::Path::new(&file_url).join(file_name);
                 let local_wrt = csv::Writer::from_path(file_path).unwrap();
                 web_socket_handler = WebSocketHandler::new(local_wrt);
             }
@@ -358,15 +358,17 @@ async fn main() {
             match ch.as_str() {
                 "depth@100ms" => {
                     let symbol = symbol.clone();
+                    let file_url = c.data.file_url.clone();
                     let task = actix_rt::spawn(async move {
-                        run_depth(symbol).await
+                        run_depth(file_url, symbol).await
                     });
                     tasks.push(task);
                 }
                 "aggTrade" => {
                     let symbol = symbol.clone();
+                    let file_url = c.data.file_url.clone();
                     let task = actix_rt::spawn(async move {
-                        run_trades(symbol).await
+                        run_trades(file_url, symbol).await
                     });
                     tasks.push(task);
                 }
