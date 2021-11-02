@@ -234,7 +234,6 @@ async fn run_depth(file_url: String, symbol: String) {
     let market: FuturesMarket = BinanceF::new(api_key_user, None);
     
     let keep_running = AtomicBool::new(true);
-    
     let depth = format!("{}@depth@100ms", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(1000);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
@@ -301,12 +300,8 @@ async fn run_trades(file_url: String, symbol: String) {
     let file_path = std::path::Path::new(&file_url).join(file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
-    
-    let api_key_user = Some("YOUR_KEY".into());
-    let market: FuturesMarket = BinanceF::new(api_key_user, None);
-    
-    let keep_running = AtomicBool::new(true);
-    
+
+    let keep_running = AtomicBool::new(true);    
     let agg_trade = format!("{}@aggTrade", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(1000);
     let mut web_socket: FuturesWebSockets<AggrTradesEvent> = FuturesWebSockets::new(tx);
