@@ -237,7 +237,7 @@ async fn run_depth(file_url: String, symbol: String) {
     let depth = format!("{}@depth@100ms", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(2048);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
-    let mut orderbook = Orderbook::new(symbol.clonoe());
+    let mut orderbook = Orderbook::new(symbol.clone());
     
     web_socket.connect(&depth).await.unwrap();
     
