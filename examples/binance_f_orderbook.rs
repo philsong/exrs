@@ -235,7 +235,7 @@ async fn run_depth(file_url: String, symbol: String) {
     
     let keep_running = AtomicBool::new(true);
     let depth = format!("{}@depth@100ms", symbol);
-    let (tx, mut rx) = tokio::sync::mpsc::channel(2048);
+    let (tx, mut rx) = tokio::sync::mpsc::channel(4096);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
     let mut orderbook = Orderbook::new(symbol.clone());
     
@@ -303,7 +303,7 @@ async fn run_trades(file_url: String, symbol: String) {
 
     let keep_running = AtomicBool::new(true);    
     let agg_trade = format!("{}@aggTrade", symbol);
-    let (tx, mut rx) = tokio::sync::mpsc::channel(2048);
+    let (tx, mut rx) = tokio::sync::mpsc::channel(4096);
     let mut web_socket: FuturesWebSockets<AggrTradesEvent> = FuturesWebSockets::new(tx);
     
     web_socket.connect(&agg_trade).await.unwrap();
