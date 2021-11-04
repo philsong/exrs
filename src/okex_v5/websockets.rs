@@ -6,7 +6,7 @@ use super::rest_model::OrderType;
 use super::ws_model::{LoginConfig, LoginRequest, WebsocketResponse};
 
 use awc::ws::Message;
-use log::debug;
+use log::{debug, warn};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use actix_codec::Framed;
@@ -158,8 +158,8 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                                             return Ok(());
                                         }
                                         if let Ok(event) = from_slice(&text) {
-                                            if let Err(_e) = self.sender.send(event).await {
-                                                println!("SendError<WE>");
+                                            if let Err(e) = self.sender.send(event).await {
+                                                warn!("{:?}", e);
                                             }
                                         } else if let Ok(response) = from_slice::<WebsocketResponse>(&text) {
                                             println!("WebsocketResponse: {:?}", response);

@@ -2,7 +2,7 @@ use super::config::*;
 use super::errors::*;
 
 use awc::ws::Message;
-use log::debug;
+use log::{debug, warn};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use actix_codec::Framed;
@@ -151,8 +151,8 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         }
                         let event: WE = from_slice(&msg)?;
 
-                        if let Err(_e) = self.sender.send(event).await {
-                            println!("SendError<WE>");
+                        if let Err(e) = self.sender.send(event).await {
+                            warn!("{:?}", e);
                         }
                     }
                     Frame::Ping(_) => {

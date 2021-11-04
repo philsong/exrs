@@ -2,7 +2,7 @@ use super::config::*;
 use super::errors::*;
 use super::ws_model::WebsocketResponse;
 
-use log::debug;
+use log::{debug, warn};
 use std::str::from_utf8;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -95,8 +95,8 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         let msg = huobi_decompress(msg.to_vec()).unwrap();
 
                         if let Ok(event) = from_slice(&msg) {
-                            if let Err(_e) = self.sender.send(event).await {
-                                println!("SendError<WE>");
+                            if let Err(e) = self.sender.send(event).await {
+                                warn!("{:?}", e);
                             }
                         } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
                             println!("WebsocketResponse: {:?}", response);
