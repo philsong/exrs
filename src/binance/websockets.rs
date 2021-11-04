@@ -152,7 +152,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         let event: WE = from_slice(&msg)?;
 
                         if let Err(e) = self.sender.send(event).await {
-                            warn!("{:?}", e);
+                            return e
                         }
                     }
                     Frame::Ping(_) => {

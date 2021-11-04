@@ -159,7 +159,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                                         }
                                         if let Ok(event) = from_slice(&text) {
                                             if let Err(e) = self.sender.send(event).await {
-                                                warn!("{:?}", e);
+                                                return e
                                             }
                                         } else if let Ok(response) = from_slice::<WebsocketResponse>(&text) {
                                             println!("WebsocketResponse: {:?}", response);
