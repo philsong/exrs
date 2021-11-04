@@ -2,7 +2,7 @@ use super::config::*;
 use super::errors::*;
 
 use awc::ws::Message;
-use log::{debug, warn};
+use log::debug;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use actix_codec::Framed;
@@ -83,13 +83,13 @@ fn combined_stream(streams: Vec<String>) -> String {
     streams.join("/")
 }
 
-pub struct WebSockets<WE: serde::de::DeserializeOwned> {
+pub struct WebSockets<WE: serde::de::DeserializeOwned + std::fmt::Debug> {
     pub socket: Option<(ClientResponse, Framed<BoxedSocket, Codec>)>,
     sender: mpsc::Sender<WE>,
     conf: Config,
 }
 
-impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
+impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
     /// New websocket holder with default configuration
     /// # Examples
     /// see examples/binance_WebSockets.rs
@@ -152,7 +152,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                         let event: WE = from_slice(&msg)?;
 
                         if let Err(e) = self.sender.send(event).await {
-                            return e
+                            return Err(Error::Msg(format!("{:?}", e)));
                         }
                     }
                     Frame::Ping(_) => {

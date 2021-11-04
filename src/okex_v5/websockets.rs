@@ -6,7 +6,7 @@ use super::rest_model::OrderType;
 use super::ws_model::{LoginConfig, LoginRequest, WebsocketResponse};
 
 use awc::ws::Message;
-use log::{debug, warn};
+use log::debug;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use actix_codec::Framed;
@@ -23,13 +23,13 @@ use serde_json::from_slice;
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-pub struct WebSockets<WE: serde::de::DeserializeOwned> {
+pub struct WebSockets<WE: serde::de::DeserializeOwned + std::fmt::Debug> {
     pub socket: Option<(ClientResponse, Framed<BoxedSocket, Codec>)>,
     sender: mpsc::Sender<WE>,
     conf: Config,
 }
 
-impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
+impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
     /// New websocket holder with default configuration
     /// # Examples
     /// see examples/binance_WebSockets.rs
@@ -159,7 +159,7 @@ impl<WE: serde::de::DeserializeOwned> WebSockets<WE> {
                                         }
                                         if let Ok(event) = from_slice(&text) {
                                             if let Err(e) = self.sender.send(event).await {
-                                                return e
+                                                return Err(Error::Msg(format!("{:?}", e)));
                                             }
                                         } else if let Ok(response) = from_slice::<WebsocketResponse>(&text) {
                                             println!("WebsocketResponse: {:?}", response);
