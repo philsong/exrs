@@ -176,7 +176,7 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
                                     }
                                 }
                             },
-                            None => continue,
+                            None => Err(Error::Msg(format!("Option::unwrap()` on a `None` value."))),
                         }
                     }
                     _ = interval.tick() => {

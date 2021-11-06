@@ -142,26 +142,32 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
     pub async fn event_loop(&mut self, running: &AtomicBool) -> Result<()> {
         while running.load(Ordering::Relaxed) {
             if let Some((_, ref mut socket)) = self.socket {
-                let message = socket.next().await.unwrap()?;
-                debug!("event_loop message - {:?}", message);
+                let message = socket.next().await;
                 match message {
-                    Frame::Text(msg) => {
-                        if msg.is_empty() {
-                            return Ok(());
-                        }
-                        let event: WE = from_slice(&msg)?;
+                    Some(message) => {
+                        let message = message?;
+                        debug!("event_loop message - {:?}", message);
+                        match message {
+                            Frame::Text(msg) => {
+                                if msg.is_empty() {
+                                    return Ok(());
+                                }
+                                let event: WE = from_slice(&msg)?;
 
-                        if let Err(e) = self.sender.send(event).await {
-                            return Err(Error::Msg(format!("{:?}", e)));
+                                if let Err(e) = self.sender.send(event).await {
+                                    return Err(Error::Msg(format!("{:?}", e)));
+                                }
+                            }
+                            Frame::Ping(_) => {
+                                socket.send(Message::Pong(Bytes::from_static(b""))).await?;
+                            }
+                            Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {}
+                            Frame::Close(e) => {
+                                return Err(Error::Msg(format!("Disconnected {:?}", e)));
+                            }
                         }
-                    }
-                    Frame::Ping(_) => {
-                        socket.send(Message::Pong(Bytes::from_static(b""))).await?;
-                    }
-                    Frame::Pong(_) | Frame::Binary(_) | Frame::Continuation(_) => {}
-                    Frame::Close(e) => {
-                        return Err(Error::Msg(format!("Disconnected {:?}", e)));
-                    }
+                    },
+                    None => Err(Error::Msg(format!("Option::unwrap()` on a `None` value."))),
                 }
                 actix_rt::task::yield_now().await;
             }

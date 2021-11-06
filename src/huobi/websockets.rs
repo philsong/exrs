@@ -84,34 +84,40 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
     pub async fn event_loop(&mut self, running: &AtomicBool) -> Result<()> {
         while running.load(Ordering::Relaxed) {
             if let Some((_, ref mut socket)) = self.socket {
-                let message = socket.next().await.unwrap()?;
-                debug!("event_loop message - {:?}", message);
+                let message = socket.next().await;
                 match message {
-                    Frame::Binary(msg) => {
-                        if msg.is_empty() {
-                            return Ok(());
-                        }
-
-                        let msg = huobi_decompress(msg.to_vec()).unwrap();
-
-                        if let Ok(event) = from_slice(&msg) {
-                            if let Err(e) = self.sender.send(event).await {
-                                return Err(Error::Msg(format!("{:?}", e)));
+                    Some(message) => {
+                        let message = message?;
+                        debug!("event_loop message - {:?}", message);
+                        match message {
+                            Frame::Binary(msg) => {
+                                if msg.is_empty() {
+                                    return Ok(());
+                                }
+        
+                                let msg = huobi_decompress(msg.to_vec()).unwrap();
+        
+                                if let Ok(event) = from_slice(&msg) {
+                                    if let Err(e) = self.sender.send(event).await {
+                                        return Err(Error::Msg(format!("{:?}", e)));
+                                    }
+                                } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
+                                    println!("WebsocketResponse: {:?}", response);
+                                } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {
+                                    socket
+                                        .send(Message::Text(from_utf8(&msg)?.replace("i", "o").into()))
+                                        .await?;
+                                } else {
+                                    return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
+                                }
                             }
-                        } else if let Ok(response) = from_slice::<WebsocketResponse>(&msg) {
-                            println!("WebsocketResponse: {:?}", response);
-                        } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {
-                            socket
-                                .send(Message::Text(from_utf8(&msg)?.replace("i", "o").into()))
-                                .await?;
-                        } else {
-                            return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
+                            Frame::Ping(_) | Frame::Pong(_) | Frame::Text(_) | Frame::Continuation(_) => {}
+                            Frame::Close(e) => {
+                                return Err(Error::Msg(format!("Disconnected {:?}", e)));
+                            }
                         }
-                    }
-                    Frame::Ping(_) | Frame::Pong(_) | Frame::Text(_) | Frame::Continuation(_) => {}
-                    Frame::Close(e) => {
-                        return Err(Error::Msg(format!("Disconnected {:?}", e)));
-                    }
+                    },
+                    None => Err(Error::Msg(format!("Option::unwrap()` on a `None` value."))),
                 }
                 actix_rt::task::yield_now().await;
             }
