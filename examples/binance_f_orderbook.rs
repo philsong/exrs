@@ -90,10 +90,10 @@ impl Orderbook {
     pub fn get_depth(&mut self, depth: usize) -> Option<Record> {
         // let asks: Vec<(Decimal, Decimal)> = self.asks.iter().take(depth).rev().collect();
         // let bids: Vec<(Decimal, Decimal)> = self.bids.iter().rev().take(depth).collect();
-        let asks_price = self.asks.keys().cloned().take(depth-1).collect();
-        let bids_price = self.bids.keys().cloned().rev().take(depth-1).collect();
-        let asks_qty = self.asks.values().cloned().take(depth-1).collect();
-        let bids_qty = self.bids.values().cloned().rev().take(depth-1).collect();
+        let asks_price = self.asks.keys().cloned().take(depth).collect();
+        let bids_price = self.bids.keys().cloned().rev().take(depth).collect();
+        let asks_qty = self.asks.values().cloned().take(depth).collect();
+        let bids_qty = self.bids.values().cloned().rev().take(depth).collect();
 
         info!("asks_price {:?}", asks_price);
         info!("bids_price {:?}", bids_price);
@@ -209,12 +209,12 @@ impl WebSocketHandler {
 
     pub fn write_depth_header(&mut self) -> Result<(), Box<dyn Error>> {
         self.wrt.write_record(&["symbol","timestamp",
-        "ap1","ap2","ap3","ap4","ap5","ap6","ap7","ap8","ap9","ap10","ap12","ap13","ap14","ap15","ap16","ap17","ap18","ap19","ap20",
-        "bp1","bp2","bp3","bp4","bp5","bp6","bp7","bp8","bp9","bp10","bp12","bp13","bp14","bp15","bp16","bp17","bp18","bp19","bp20",
-        "az1","az2","az3","az4","az5","az6","az7","az8","az9","az10","az12","az13","az14","az15","az16","az17","az18","az19","az20",
-        "bz1","bz2","bz3","bz4","bz5","bz6","bz7","bz8","bz9","bz10","bz12","bz13","bz14","bz15","bz16","bz17","bz18","bz19","bz20"
-        ])?;
-
+        "ap1","ap2","ap3","ap4","ap5","ap6","ap7","ap8","ap9","ap10","ap11","ap12","ap13","ap14","ap15","ap16","ap17","ap18","ap19","ap20",
+        "bp1","bp2","bp3","bp4","bp5","bp6","bp7","bp8","bp9","bp10","bp11","bp12","bp13","bp14","bp15","bp16","bp17","bp18","bp19","bp20",
+        "az1","az2","az3","az4","az5","az6","az7","az8","az9","az10","az11","az12","az13","az14","az15","az16","az17","az18","az19","az20",
+        "bz1","bz2","bz3","bz4","bz5","bz6","bz7","bz8","bz9","bz10","bz11","bz12","bz13","bz14","bz15","bz16","bz17","bz18","bz19","bz20"
+        ])?;"ap11
+,"
         Ok(())
     }
 
