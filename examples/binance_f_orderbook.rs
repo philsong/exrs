@@ -213,7 +213,9 @@ impl WebSocketHandler {
         "bp1","bp2","bp3","bp4","bp5","bp6","bp7","bp8","bp9","bp10","bp12","bp13","bp14","bp15","bp16","bp17","bp18","bp19","bp20",
         "az1","az2","az3","az4","az5","az6","az7","az8","az9","az10","az12","az13","az14","az15","az16","az17","az18","az19","az20",
         "bz1","bz2","bz3","bz4","bz5","bz6","bz7","bz8","bz9","bz10","bz12","bz13","bz14","bz15","bz16","bz17","bz18","bz19","bz20"
-        ])
+        ])?;
+
+        Ok(())
     }
 
     // serialize Depth as CSV records
