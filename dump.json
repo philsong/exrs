@@ -10,7 +10,7 @@
     },
 	"DATA": {
 		"symbol": ["btcusdt", "dogeusdt"],
-        "channels": ["depth@100ms", "aggTrade"],
+        "channels": ["depth@0ms", "aggTrade"],
         "silent": true,
 		"platform": "BinanceF",
         "influx_database": false,

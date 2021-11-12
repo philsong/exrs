@@ -246,7 +246,7 @@ async fn run_depth(file_url: String, symbol: String) {
     let market: FuturesMarket = BinanceF::new(api_key_user, None);
     
     let keep_running = AtomicBool::new(true);
-    let depth = format!("{}@depth@100ms", symbol);
+    let depth = format!("{}@depth@0ms", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(8192);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
     let mut orderbook = Orderbook::new(symbol.clone());
@@ -364,7 +364,7 @@ async fn main() {
     for symbol in c.data.symbol.iter() {
         for ch in c.data.channels.iter() {
             match ch.as_str() {
-                "depth@100ms" => {
+                "depth@0ms" => {
                     let symbol = symbol.clone();
                     let file_url = c.data.file_url.clone();
                     let task = actix_rt::spawn(async move {
