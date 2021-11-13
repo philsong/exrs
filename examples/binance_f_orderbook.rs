@@ -450,6 +450,14 @@ async fn main() {
                     let symbol = symbol.clone();
                     let file_url = c.data.file_url.clone();
                     let task = actix_rt::spawn(async move {
+                        run_partial_depth(file_url, symbol).await
+                    });
+                    tasks.push(task);
+                }
+                "depth@0ms" => {
+                    let symbol = symbol.clone();
+                    let file_url = c.data.file_url.clone();
+                    let task = actix_rt::spawn(async move {
                         run_depth(file_url, symbol).await
                     });
                     tasks.push(task);
