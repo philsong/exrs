@@ -1,3 +1,6 @@
+#[global_allocator]
+static GLOBAL: snmalloc_rs::SnMalloc = snmalloc_rs::SnMalloc;
+
 use chrono::{DateTime, NaiveDateTime, Utc};
 use csv::Writer;
 use env_logger::Builder;
@@ -232,9 +235,9 @@ impl WebSocketHandler {
     // serialize Depth as CSV records
     pub fn write_partial_depth_to_file(&mut self, event: &DepthOrderBookEvent) -> Result<(), Box<dyn Error>> {
         let asks_price: Vec<Decimal> = event.asks.iter().map(|x| x.price).collect();
-        let bids_price: Vec<Decimal>  = event.bids.iter().map(|x| x.price).collect();
-        let asks_qty: Vec<Decimal>  = event.asks.iter().map(|x| x.qty).collect();
-        let bids_qty: Vec<Decimal>  = event.bids.iter().map(|x| x.qty).collect();
+        let bids_price: Vec<Decimal> = event.bids.iter().map(|x| x.price).collect();
+        let asks_qty: Vec<Decimal> = event.asks.iter().map(|x| x.qty).collect();
+        let bids_qty: Vec<Decimal> = event.bids.iter().map(|x| x.qty).collect();
 
         info!("asks_price {:?}", asks_price);
         info!("bids_price {:?}", bids_price);
