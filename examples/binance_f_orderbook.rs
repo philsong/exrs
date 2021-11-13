@@ -207,12 +207,16 @@ impl WebSocketHandler {
         WebSocketHandler { wrt: local_wrt }
     }
 
+    /// "ap6","ap7","ap8","ap9","ap10","ap11","ap12","ap13","ap14","ap15","ap16","ap17","ap18","ap19","ap20",
+    /// "bp6","bp7","bp8","bp9","bp10","bp11","bp12","bp13","bp14","bp15","bp16","bp17","bp18","bp19","bp20",
+    /// "az6","az7","az8","az9","az10","az11","az12","az13","az14","az15","az16","az17","az18","az19","az20",
+    /// "bz6","bz7","bz8","bz9","bz10","bz11","bz12","bz13","bz14","bz15","bz16","bz17","bz18","bz19","bz20",
     pub fn write_depth_header(&mut self) -> Result<(), Box<dyn Error>> {
         self.wrt.write_record(&["symbol","timestamp",
-        "ap1","ap2","ap3","ap4","ap5","ap6","ap7","ap8","ap9","ap10","ap11","ap12","ap13","ap14","ap15","ap16","ap17","ap18","ap19","ap20",
-        "bp1","bp2","bp3","bp4","bp5","bp6","bp7","bp8","bp9","bp10","bp11","bp12","bp13","bp14","bp15","bp16","bp17","bp18","bp19","bp20",
-        "az1","az2","az3","az4","az5","az6","az7","az8","az9","az10","az11","az12","az13","az14","az15","az16","az17","az18","az19","az20",
-        "bz1","bz2","bz3","bz4","bz5","bz6","bz7","bz8","bz9","bz10","bz11","bz12","bz13","bz14","bz15","bz16","bz17","bz18","bz19","bz20"
+        "ap1","ap2","ap3","ap4","ap5",   
+        "bp1","bp2","bp3","bp4","bp5",   
+        "az1","az2","az3","az4","az5",   
+        "bz1","bz2","bz3","bz4","bz5"    
         ])?;
         
         Ok(())
@@ -225,6 +229,32 @@ impl WebSocketHandler {
         Ok(())
     }
 
+    // serialize Depth as CSV records
+    pub fn write_partial_depth_to_file(&mut self, event: &DepthOrderBookEvent) -> Result<(), Box<dyn Error>> {
+        let asks_price: Vec<Decimal> = event.asks.iter().map(|x| x.price).collect();
+        let bids_price: Vec<Decimal>  = event.bids.iter().map(|x| x.price).collect();
+        let asks_qty: Vec<Decimal>  = event.asks.iter().map(|x| x.qty).collect();
+        let bids_qty: Vec<Decimal>  = event.bids.iter().map(|x| x.qty).collect();
+
+        info!("asks_price {:?}", asks_price);
+        info!("bids_price {:?}", bids_price);
+        info!("asks_qty {:?}", asks_qty);
+        info!("bids_qty {:?}", bids_qty);
+
+        let data = Some((
+            &event.symbol,
+            &event.event_time,
+            asks_price,
+            bids_price,
+            asks_qty,
+            bids_qty,
+        ));
+
+        self.wrt.serialize(data)?;
+
+        Ok(())
+    }
+
     // serialize Trades as CSV records
     pub fn write_trades_to_file(&mut self, event: &AggrTradesEvent) -> Result<(), Box<dyn Error>> {
         self.wrt.serialize(event)?;
@@ -233,10 +263,59 @@ impl WebSocketHandler {
     }
 }
 
+async fn run_partial_depth(file_url: String, symbol: String) {
+    let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
+    
+    let file_name = format!("{}-{}-{:?}.csv", symbol, "depth5", Utc::today());
+    let file_path = std::path::Path::new(&file_url).join(file_name);
+    let local_wrt = csv::Writer::from_path(file_path).unwrap();
+    let mut web_socket_handler = WebSocketHandler::new(local_wrt);
+    web_socket_handler.write_depth_header().unwrap();
+    
+    let keep_running = AtomicBool::new(true);
+    let depth = format!("{}@depth5@0ms", symbol);
+    let (tx, mut rx) = tokio::sync::mpsc::channel(8192);
+    let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
+
+    web_socket.connect(&depth).await.unwrap();
+    
+    actix_rt::spawn(async move {
+    
+        loop {
+            let msg = rx.recv().await.unwrap();
+    
+            if DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0),
+                Utc,
+            ) > tmr_dt
+            {
+                tmr_dt = Utc::today().and_hms(23, 59, 59);
+                let file_name = format!("{}-{}-{:?}.csv", symbol, "depth5", Utc::today());
+                let file_path = std::path::Path::new(&file_url).join(file_name);
+                let local_wrt = csv::Writer::from_path(file_path).unwrap();
+                web_socket_handler = WebSocketHandler::new(local_wrt);
+                web_socket_handler.write_depth_header().unwrap();
+            }
+    
+            if let Err(error) = web_socket_handler.write_partial_depth_to_file(&msg) {
+                warn!("{}", error);
+            };
+        }
+    });
+    
+    while let Err(e) = web_socket.event_loop(&keep_running).await {
+        warn!("partial_depth web_socket event_loop Error: {}, starting reconnect...", e);
+    
+        while let Err(e) = web_socket.connect(&depth).await {
+            warn!("partial_depth web_socket connect Error: {}, try again...", e);
+        }
+    }
+}
+
 async fn run_depth(file_url: String, symbol: String) {
     let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
     
-    let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
+    let file_name = format!("{}-{}-{:?}.csv", symbol, "depth5", Utc::today());
     let file_path = std::path::Path::new(&file_url).join(file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
@@ -276,7 +355,7 @@ async fn run_depth(file_url: String, symbol: String) {
                 orderbook.partial(&partial_init);
             }
     
-            let event = orderbook.get_depth(20).unwrap();
+            let event = orderbook.get_depth(5).unwrap();
     
             if DateTime::<Utc>::from_utc(
                 NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0),
@@ -284,7 +363,7 @@ async fn run_depth(file_url: String, symbol: String) {
             ) > tmr_dt
             {
                 tmr_dt = Utc::today().and_hms(23, 59, 59);
-                let file_name = format!("{}-{}-{:?}.csv", symbol, "depth20", Utc::today());
+                let file_name = format!("{}-{}-{:?}.csv", symbol, "depth5", Utc::today());
                 let file_path = std::path::Path::new(&file_url).join(file_name);
                 let local_wrt = csv::Writer::from_path(file_path).unwrap();
                 web_socket_handler = WebSocketHandler::new(local_wrt);
@@ -364,7 +443,7 @@ async fn main() {
     for symbol in c.data.symbol.iter() {
         for ch in c.data.channels.iter() {
             match ch.as_str() {
-                "depth@0ms" => {
+                "depth5@0ms" => {
                     let symbol = symbol.clone();
                     let file_url = c.data.file_url.clone();
                     let task = actix_rt::spawn(async move {
