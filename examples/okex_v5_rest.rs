@@ -8,9 +8,9 @@ use exrs::okex_v5::config::Config;
 use exrs::okex_v5::errors::Error;
 use exrs::okex_v5::rest_model::PositionSide;
 
-static API_KEY: &str = "1f2ee2ab-9a1f-4946-b496-a444fdf11c4a";
-static SECRET_KEY: &str = "8187D5156E0979C385B11263C2E247A3";
-static PASSPHRASE: &str = "zpxx2021";
+static API_KEY: &str = "";
+static SECRET_KEY: &str = "";
+static PASSPHRASE: &str = "";
 
 #[tokio::main]
 async fn main() {
