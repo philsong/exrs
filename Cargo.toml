@@ -31,7 +31,6 @@ lazy_static = "1.4.0"
 libdeflater = "0.7.3"
 log = "0.4.14"
 reqwest = { version = "0.11.6", default-features = false, features = ["json", "blocking", "rustls-tls"] }
-ring = "0.16.20"
 rust_decimal = "1.17.0"
 rust_decimal_macros = "1.17.0"
 serde = { version = "1.0.130", features = ["derive"] }

@@ -462,7 +462,6 @@ dependencies = [
  "libdeflater",
  "log",
  "reqwest",
- "ring",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",

@@ -5,7 +5,7 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE, USER_AGE
 use reqwest::Method;
 use reqwest::Response;
 use reqwest::StatusCode;
-use ring::hmac;
+use hmac_sha256::HMAC;
 use serde::de;
 use serde::de::DeserializeOwned;
 use serde_json::from_str;
@@ -195,8 +195,7 @@ impl Client {
         );
         println!("pre_hash: {}", pre_hash);
 
-        let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
-        let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
+        let signature = base64::encode(HMAC::mac(pre_hash.as_bytes(), self.secret_key.as_bytes()));
 
         custom_headers.insert(
             HeaderName::from_static("ok-access-key"),
@@ -247,8 +246,7 @@ impl Client {
             query_string
         );
 
-        let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
-        let signature = base64::encode(hmac::sign(&signed_key, pre_hash.as_bytes()).as_ref());
+        let signature = base64::encode(HMAC::mac(pre_hash.as_bytes(), self.secret_key.as_bytes()));
 
         custom_headers.insert(
             HeaderName::from_static("ok-access-key"),
