@@ -94,9 +94,9 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
                                 if msg.is_empty() {
                                     return Ok(());
                                 }
-        
+
                                 let msg = huobi_decompress(msg.to_vec()).unwrap();
-        
+
                                 if let Ok(event) = from_slice(&msg) {
                                     if let Err(e) = self.sender.send(event).await {
                                         return Err(Error::Msg(format!("{:?}", e)));
@@ -105,19 +105,29 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
                                     println!("WebsocketResponse: {:?}", response);
                                 } else if from_utf8(&msg)?.starts_with(r#"{"pi"#) {
                                     socket
-                                        .send(Message::Text(from_utf8(&msg)?.replace("i", "o").into()))
+                                        .send(Message::Text(
+                                            from_utf8(&msg)?.replace("i", "o").into(),
+                                        ))
                                         .await?;
                                 } else {
-                                    return Err(Error::Msg(format!("Websocket Parse failed {:?}", msg)));
+                                    return Err(Error::Msg(format!(
+                                        "Websocket Parse failed {:?}",
+                                        msg
+                                    )));
                                 }
                             }
-                            Frame::Ping(_) | Frame::Pong(_) | Frame::Text(_) | Frame::Continuation(_) => {}
+                            Frame::Ping(_)
+                            | Frame::Pong(_)
+                            | Frame::Text(_)
+                            | Frame::Continuation(_) => {}
                             Frame::Close(e) => {
                                 return Err(Error::Msg(format!("Disconnected {:?}", e)));
                             }
                         }
-                    },
-                    None => return Err(Error::Msg(format!("Option::unwrap()` on a `None` value."))),
+                    }
+                    None => {
+                        return Err(Error::Msg(format!("Option::unwrap()` on a `None` value.")))
+                    }
                 }
                 actix_rt::task::yield_now().await;
             }

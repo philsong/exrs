@@ -16,8 +16,8 @@ use awc::{
 };
 use bytes::Bytes;
 use futures_util::{sink::SinkExt as _, stream::StreamExt as _};
-use reqwest::Method;
 use hmac_sha256::HMAC;
+use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use serde_json::from_slice;
 use tokio::sync::mpsc;
@@ -115,7 +115,7 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
             "/users/self/verify"
         );
 
-        let signature = base64::encode(HMAC::mac( pre_hash.as_bytes(), secret_key.as_bytes()));
+        let signature = base64::encode(HMAC::mac(pre_hash.as_bytes(), secret_key.as_bytes()));
 
         let login_cfg = LoginConfig {
             api_key: api_key,

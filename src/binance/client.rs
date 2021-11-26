@@ -1,10 +1,10 @@
 use std::time::Duration;
 
 use hex::encode as hex_encode;
+use hmac_sha256::HMAC;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use reqwest::Response;
 use reqwest::StatusCode;
-use hmac_sha256::HMAC;
 use serde::de;
 use serde::de::DeserializeOwned;
 use serde_json::from_str;

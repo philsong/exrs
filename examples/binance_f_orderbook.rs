@@ -215,13 +215,31 @@ impl WebSocketHandler {
     /// "az6","az7","az8","az9","az10","az11","az12","az13","az14","az15","az16","az17","az18","az19","az20",
     /// "bz6","bz7","bz8","bz9","bz10","bz11","bz12","bz13","bz14","bz15","bz16","bz17","bz18","bz19","bz20",
     pub fn write_depth_header(&mut self) -> Result<(), Box<dyn Error>> {
-        self.wrt.write_record(&["symbol","timestamp",
-        "ap1","ap2","ap3","ap4","ap5",   
-        "bp1","bp2","bp3","bp4","bp5",   
-        "az1","az2","az3","az4","az5",   
-        "bz1","bz2","bz3","bz4","bz5"    
+        self.wrt.write_record(&[
+            "symbol",
+            "timestamp",
+            "ap1",
+            "ap2",
+            "ap3",
+            "ap4",
+            "ap5",
+            "bp1",
+            "bp2",
+            "bp3",
+            "bp4",
+            "bp5",
+            "az1",
+            "az2",
+            "az3",
+            "az4",
+            "az5",
+            "bz1",
+            "bz2",
+            "bz3",
+            "bz4",
+            "bz5",
         ])?;
-        
+
         Ok(())
     }
 
@@ -233,7 +251,10 @@ impl WebSocketHandler {
     }
 
     // serialize Depth as CSV records
-    pub fn write_partial_depth_to_file(&mut self, event: &DepthOrderBookEvent) -> Result<(), Box<dyn Error>> {
+    pub fn write_partial_depth_to_file(
+        &mut self,
+        event: &DepthOrderBookEvent,
+    ) -> Result<(), Box<dyn Error>> {
         let asks_price: Vec<Decimal> = event.asks.iter().map(|x| x.price).collect();
         let bids_price: Vec<Decimal> = event.bids.iter().map(|x| x.price).collect();
         let asks_qty: Vec<Decimal> = event.asks.iter().map(|x| x.qty).collect();
@@ -268,25 +289,24 @@ impl WebSocketHandler {
 
 async fn run_partial_depth(file_url: String, symbol: String) {
     let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
-    
+
     let file_name = format!("{}-{}-{:?}.csv", symbol, "depth5", Utc::today());
     let file_path = std::path::Path::new(&file_url).join(file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
     web_socket_handler.write_depth_header().unwrap();
-    
+
     let keep_running = AtomicBool::new(true);
     let depth = format!("{}@depth5@0ms", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(8192);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
 
     web_socket.connect(&depth).await.unwrap();
-    
+
     actix_rt::spawn(async move {
-    
         loop {
             let msg = rx.recv().await.unwrap();
-    
+
             if DateTime::<Utc>::from_utc(
                 NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0),
                 Utc,
@@ -299,49 +319,56 @@ async fn run_partial_depth(file_url: String, symbol: String) {
                 web_socket_handler = WebSocketHandler::new(local_wrt);
                 web_socket_handler.write_depth_header().unwrap();
             }
-    
+
             if let Err(error) = web_socket_handler.write_partial_depth_to_file(&msg) {
                 warn!("{}", error);
             };
         }
     });
-    
+
     while let Err(e) = web_socket.event_loop(&keep_running).await {
-        warn!("partial_depth web_socket event_loop Error: {}, starting reconnect...", e);
-    
+        warn!(
+            "partial_depth web_socket event_loop Error: {}, starting reconnect...",
+            e
+        );
+
         while let Err(e) = web_socket.connect(&depth).await {
-            warn!("partial_depth web_socket connect Error: {}, try again...", e);
+            warn!(
+                "partial_depth web_socket connect Error: {}, try again...",
+                e
+            );
         }
     }
 }
 
 async fn run_depth(file_url: String, symbol: String) {
     let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
-    
+
     let file_name = format!("{}-{}-{:?}.csv", symbol, "depth5", Utc::today());
     let file_path = std::path::Path::new(&file_url).join(file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
     web_socket_handler.write_depth_header().unwrap();
-    
+
     let api_key_user = Some("YOUR_KEY".into());
     let market: FuturesMarket = BinanceF::new(api_key_user, None);
-    
+
     let keep_running = AtomicBool::new(true);
     let depth = format!("{}@depth@0ms", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(8192);
     let mut web_socket: FuturesWebSockets<DepthOrderBookEvent> = FuturesWebSockets::new(tx);
     let mut orderbook = Orderbook::new(symbol.clone());
-    
+
     web_socket.connect(&depth).await.unwrap();
-    
+
     actix_rt::spawn(async move {
-        let partial_init: OrderBookPartial = market.get_custom_depth(symbol.clone(), 1000).await.unwrap();
+        let partial_init: OrderBookPartial =
+            market.get_custom_depth(symbol.clone(), 1000).await.unwrap();
         orderbook.partial(&partial_init);
-    
+
         loop {
             let msg = rx.recv().await.unwrap();
-    
+
             if msg.final_update_id < partial_init.last_update_id {
                 continue;
             } else if msg.first_update_id <= partial_init.last_update_id
@@ -357,9 +384,9 @@ async fn run_depth(file_url: String, symbol: String) {
                     market.get_custom_depth(symbol.clone(), 1000).await.unwrap();
                 orderbook.partial(&partial_init);
             }
-    
+
             let event = orderbook.get_depth(5).unwrap();
-    
+
             if DateTime::<Utc>::from_utc(
                 NaiveDateTime::from_timestamp((msg.event_time / 1000) as i64, 0),
                 Utc,
@@ -372,16 +399,19 @@ async fn run_depth(file_url: String, symbol: String) {
                 web_socket_handler = WebSocketHandler::new(local_wrt);
                 web_socket_handler.write_depth_header().unwrap();
             }
-    
+
             if let Err(error) = web_socket_handler.write_depth_to_file(&event) {
                 warn!("{}", error);
             };
         }
     });
-    
+
     while let Err(e) = web_socket.event_loop(&keep_running).await {
-        warn!("depth web_socket event_loop Error: {}, starting reconnect...", e);
-    
+        warn!(
+            "depth web_socket event_loop Error: {}, starting reconnect...",
+            e
+        );
+
         while let Err(e) = web_socket.connect(&depth).await {
             warn!("depth web_socket connect Error: {}, try again...", e);
         }
@@ -390,19 +420,19 @@ async fn run_depth(file_url: String, symbol: String) {
 
 async fn run_trades(file_url: String, symbol: String) {
     let mut tmr_dt = Utc::today().and_hms(23, 59, 59);
-    
+
     let file_name = format!("{}-{}-{:?}.csv", symbol, "trades", Utc::today());
     let file_path = std::path::Path::new(&file_url).join(file_name);
     let local_wrt = csv::Writer::from_path(file_path).unwrap();
     let mut web_socket_handler = WebSocketHandler::new(local_wrt);
 
-    let keep_running = AtomicBool::new(true);    
+    let keep_running = AtomicBool::new(true);
     let agg_trade = format!("{}@aggTrade", symbol);
     let (tx, mut rx) = tokio::sync::mpsc::channel(8192);
     let mut web_socket: FuturesWebSockets<AggrTradesEvent> = FuturesWebSockets::new(tx);
-    
+
     web_socket.connect(&agg_trade).await.unwrap();
-    
+
     actix_rt::spawn(async move {
         loop {
             let event = rx.recv().await.unwrap();
@@ -418,16 +448,19 @@ async fn run_trades(file_url: String, symbol: String) {
                 let local_wrt = csv::Writer::from_path(file_path).unwrap();
                 web_socket_handler = WebSocketHandler::new(local_wrt);
             }
-    
+
             if let Err(error) = web_socket_handler.write_trades_to_file(&event) {
                 warn!("{}", error);
             };
         }
     });
-    
+
     while let Err(e) = web_socket.event_loop(&keep_running).await {
-        warn!("trades web_socket event_loop Error: {}, starting reconnect...", e);
-    
+        warn!(
+            "trades web_socket event_loop Error: {}, starting reconnect...",
+            e
+        );
+
         while let Err(e) = web_socket.connect(&agg_trade).await {
             warn!("trades web_socket connect Error: {}, try again...", e);
         }
@@ -449,25 +482,20 @@ async fn main() {
                 "depth5@0ms" => {
                     let symbol = symbol.clone();
                     let file_url = c.data.file_url.clone();
-                    let task = actix_rt::spawn(async move {
-                        run_partial_depth(file_url, symbol).await
-                    });
+                    let task =
+                        actix_rt::spawn(async move { run_partial_depth(file_url, symbol).await });
                     tasks.push(task);
                 }
                 "depth@0ms" => {
                     let symbol = symbol.clone();
                     let file_url = c.data.file_url.clone();
-                    let task = actix_rt::spawn(async move {
-                        run_depth(file_url, symbol).await
-                    });
+                    let task = actix_rt::spawn(async move { run_depth(file_url, symbol).await });
                     tasks.push(task);
                 }
                 "aggTrade" => {
                     let symbol = symbol.clone();
                     let file_url = c.data.file_url.clone();
-                    let task = actix_rt::spawn(async move {
-                        run_trades(file_url, symbol).await
-                    });
+                    let task = actix_rt::spawn(async move { run_trades(file_url, symbol).await });
                     tasks.push(task);
                 }
                 _ => {
@@ -478,6 +506,6 @@ async fn main() {
     }
 
     for task in tasks {
-        task.await.unwrap();  
+        task.await.unwrap();
     }
 }

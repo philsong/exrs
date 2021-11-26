@@ -166,8 +166,10 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> WebSockets<WE> {
                                 return Err(Error::Msg(format!("Disconnected {:?}", e)));
                             }
                         }
-                    },
-                    None => return Err(Error::Msg(format!("Option::unwrap()` on a `None` value."))),
+                    }
+                    None => {
+                        return Err(Error::Msg(format!("Option::unwrap()` on a `None` value.")))
+                    }
                 }
                 actix_rt::task::yield_now().await;
             }
