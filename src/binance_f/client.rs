@@ -4,7 +4,7 @@ use hex::encode as hex_encode;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE, USER_AGENT};
 use reqwest::Response;
 use reqwest::StatusCode;
-use ring::hmac;
+use hmac_sha256::HMAC;
 use serde::de;
 use serde::de::DeserializeOwned;
 use serde_json::from_str;
@@ -218,8 +218,7 @@ impl Client {
 
     // Request must be signed
     fn sign_request(&self, endpoint: &str, request: &str) -> String {
-        let signed_key = hmac::Key::new(hmac::HMAC_SHA256, self.secret_key.as_bytes());
-        let signature = hex_encode(hmac::sign(&signed_key, request.as_bytes()).as_ref());
+        let signature = hex_encode(HMAC::mac(request.as_bytes(), self.secret_key.as_bytes()));
 
         let request_body: String = format!("{}&signature={}", request, signature);
         let url: String = format!("{}{}?{}", self.host, endpoint, request_body);

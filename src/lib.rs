@@ -8,11 +8,3 @@ pub mod binance;
 pub mod binance_f;
 pub mod huobi;
 pub mod okex_v5;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
