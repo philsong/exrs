@@ -1,4 +1,4 @@
-use super::rest_model::{string_or_float, string_or_float_opt, string_or_u64};
+use super::rest_model::{string_or_float, string_or_u64};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]

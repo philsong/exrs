@@ -1,6 +1,5 @@
 use base64;
-use hex::encode as hex_encode;
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE, USER_AGENT};
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use reqwest::Response;
 use reqwest::StatusCode;
 use hmac_sha256::HMAC;
@@ -10,7 +9,7 @@ use std::time::Duration;
 
 use crate::huobi::errors::error_messages;
 use crate::huobi::errors::*;
-use crate::huobi::util::{build_request_p, build_signed_request_p};
+use crate::huobi::util::{build_request_p};
 use serde::de::DeserializeOwned;
 
 #[derive(Clone)]

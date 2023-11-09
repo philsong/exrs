@@ -1,10 +1,10 @@
-use std::cell::Ref;
+// use std::cell::Ref;
 
 use crate::huobi::client::*;
 use crate::huobi::errors::*;
-use crate::huobi::rest_model::*;
+// use crate::huobi::rest_model::*;
 
-use serde_json::from_str;
+// use serde_json::from_str;
 
 #[derive(Clone)]
 pub struct Reference {

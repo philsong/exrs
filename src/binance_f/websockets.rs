@@ -165,7 +165,7 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> FuturesWebSockets<WE> {
                         return Err(Error::Msg(format!("Option::unwrap()` on a `None` value.")))
                     }
                 }
-                actix_rt::task::yield_now().await;
+                let _ = actix_rt::task::yield_now().await;
             }
         }
         Ok(())
