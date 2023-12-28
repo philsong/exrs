@@ -90,6 +90,7 @@ where
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct OrderRequest {
+    pub new_client_order_id: String,
     pub symbol: String,
     pub side: OrderSide,
     pub position_side: Option<PositionSide>,
@@ -145,6 +146,7 @@ impl FuturesAccount {
 
     pub async fn limit_buy(
         &self,
+        new_client_order_id: impl Into<String>,
         symbol: impl Into<String>,
         qty: impl Into<f64>,
         price: impl Into<f64>,
@@ -152,6 +154,7 @@ impl FuturesAccount {
         time_in_force: TimeInForce,
     ) -> Result<Transaction> {
         let order = OrderRequest {
+            new_client_order_id: new_client_order_id.into(),
             symbol: symbol.into(),
             side: OrderSide::Buy,
             position_side: Some(position_side),
@@ -172,6 +175,7 @@ impl FuturesAccount {
 
     pub async fn limit_sell(
         &self,
+        new_client_order_id: impl Into<String>,
         symbol: impl Into<String>,
         qty: impl Into<f64>,
         price: impl Into<f64>,
@@ -179,6 +183,7 @@ impl FuturesAccount {
         time_in_force: TimeInForce,
     ) -> Result<Transaction> {
         let order = OrderRequest {
+            new_client_order_id: new_client_order_id.into(),
             symbol: symbol.into(),
             side: OrderSide::Sell,
             position_side: Some(position_side),
@@ -204,6 +209,7 @@ impl FuturesAccount {
         F: Into<f64>,
     {
         let order = OrderRequest {
+            new_client_order_id: "".to_string(),
             symbol: symbol.into(),
             side: OrderSide::Buy,
             position_side: None,
@@ -229,6 +235,7 @@ impl FuturesAccount {
         F: Into<f64>,
     {
         let order: OrderRequest = OrderRequest {
+            new_client_order_id: "".to_string(),
             symbol: symbol.into(),
             side: OrderSide::Sell,
             position_side: None,
