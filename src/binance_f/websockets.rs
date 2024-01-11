@@ -70,9 +70,9 @@ pub fn diff_book_depth_stream(symbol: &str, update_speed: u16) -> String {
     format!("{}@depth@{}ms", symbol, update_speed)
 }
 
-fn combined_stream(streams: Vec<String>) -> String {
-    streams.join("/")
-}
+// fn combined_stream(streams: Vec<String>) -> String {
+//     streams.join("/")
+// }
 
 pub struct FuturesWebSockets<WE: serde::de::DeserializeOwned + std::fmt::Debug> {
     pub socket: Option<(ClientResponse, Framed<BoxedSocket, Codec>)>,

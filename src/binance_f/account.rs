@@ -133,9 +133,9 @@ struct ChangePositionModeRequest {
 }
 
 /// todo: BatchOrder
-struct BatchOrdersRequest {
-    pub batch_orders: Vec<OrderRequest>,
-}
+// struct BatchOrdersRequest {
+//     pub batch_orders: Vec<OrderRequest>,
+// }
 
 impl FuturesAccount {
     async fn post_order(&self, order: OrderRequest) -> Result<Transaction> {
@@ -262,6 +262,38 @@ impl FuturesAccount {
             .await
     }
 
+    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<CancelAllOpenOrdersResponse>
+    where
+        S: Into<String>,
+    {
+        self.client
+            .delete_signed_p(
+                FAPI_ALL_OPEN_ORDERS,
+                PairQuery {
+                    symbol: symbol.into(),
+                },
+                self.recv_window,
+            )
+            .await
+    }
+
+    pub async fn get_all_open_orders<S>(&self, symbol: S) -> Result<Vec<Transaction>>
+    where
+        S: Into<String>,
+    {
+        self.client
+            .get_signed_p(
+                FAPI_OPEN_ORDERS,
+                Some(PairAndWindowQuery {
+                    symbol: symbol.into(),
+                    recv_window: self.recv_window,
+                }),
+                self.recv_window,
+            )
+            .await
+    }
+
+
     pub async fn position_information<S>(&self, symbol: S) -> Result<Vec<Position>>
     where
         S: Into<String>,
@@ -315,42 +347,11 @@ impl FuturesAccount {
         Ok(())
     }
 
-    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<CancelAllOpenOrdersResponse>
-    where
-        S: Into<String>,
-    {
-        self.client
-            .delete_signed_p(
-                FAPI_ALL_OPEN_ORDERS,
-                PairQuery {
-                    symbol: symbol.into(),
-                },
-                self.recv_window,
-            )
-            .await
-    }
-
-    pub async fn get_all_open_orders<S>(&self, symbol: S) -> Result<Vec<Transaction>>
-    where
-        S: Into<String>,
-    {
-        self.client
-            .get_signed_p(
-                FAPI_OPEN_ORDERS,
-                Some(PairAndWindowQuery {
-                    symbol: symbol.into(),
-                    recv_window: self.recv_window,
-                }),
-                self.recv_window,
-            )
-            .await
-    }
-
     pub async fn get_position_mode(&self) -> Result<PositionModeResponse> {
         let parameters = BTreeMap::new();
         let request = build_signed_request(parameters, self.recv_window)?;
         self.client
-            .get_signed_d(FAPI_MULTI_ASSETS_MARGIN, request.as_str())
+            .get_signed_d(FAPI_POSITION_SIDE_DUAL, request.as_str())
             .await
     }
 

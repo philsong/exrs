@@ -1080,7 +1080,7 @@ pub(crate) mod string_or_float {
 pub(crate) mod string_or_float_opt {
     use std::fmt;
 
-    use serde::{Deserialize, Deserializer, Serializer};
+    use serde::{Deserializer, Serializer};
 
     pub fn serialize<T, S>(value: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1097,12 +1097,12 @@ pub(crate) mod string_or_float_opt {
     where
         D: Deserializer<'de>,
     {
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum StringOrFloat {
-            String(String),
-            Float(f64),
-        }
+        // #[derive(Deserialize)]
+        // #[serde(untagged)]
+        // enum StringOrFloat {
+        //     String(String),
+        //     Float(f64),
+        // }
 
         Ok(Some(super::string_or_float::deserialize(deserializer)?))
     }
