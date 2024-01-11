@@ -22,7 +22,8 @@ impl FuturesGeneral {
     // Obtain exchange information
     // - Current exchange trading rules and symbol information
     pub async fn exchange_info(&self) -> Result<ExchangeInformation> {
-        self.client.get_p("/fapi/v1/exchangeInfo", "").await
+        let info = self.client.get_p("/fapi/v1/exchangeInfo", "").await;
+        info
     }
 
     // Get Symbol information
@@ -32,6 +33,7 @@ impl FuturesGeneral {
     {
         let symbol_string = symbol.into();
         let upper_symbol = symbol_string.to_uppercase();
+
         match self.exchange_info().await {
             Ok(info) => {
                 for item in info.symbols {

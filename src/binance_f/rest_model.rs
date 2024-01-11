@@ -35,13 +35,6 @@ pub enum Filters {
         max_price: String,
         tick_size: String,
     },
-    #[serde(rename = "PERCENT_PRICE")]
-    #[serde(rename_all = "camelCase")]
-    PercentPrice {
-        multiplier_up: String,
-        multiplier_down: String,
-        avg_price_mins: Option<f64>,
-    },
     #[serde(rename = "LOT_SIZE")]
     #[serde(rename_all = "camelCase")]
     LotSize {
@@ -49,29 +42,6 @@ pub enum Filters {
         max_qty: String,
         step_size: String,
     },
-    #[serde(rename = "MIN_NOTIONAL")]
-    #[serde(rename_all = "camelCase")]
-    MinNotional {
-        notional: Option<String>,
-        min_notional: Option<String>,
-        apply_to_market: Option<bool>,
-        avg_price_mins: Option<f64>,
-    },
-    #[serde(rename = "ICEBERG_PARTS")]
-    #[serde(rename_all = "camelCase")]
-    IcebergParts { limit: Option<u16> },
-    #[serde(rename = "MAX_NUM_ORDERS")]
-    #[serde(rename_all = "camelCase")]
-    MaxNumOrders { max_num_orders: Option<u16> },
-    #[serde(rename = "MAX_NUM_ALGO_ORDERS")]
-    #[serde(rename_all = "camelCase")]
-    MaxNumAlgoOrders { max_num_algo_orders: Option<u16> },
-    #[serde(rename = "MAX_NUM_ICEBERG_ORDERS")]
-    #[serde(rename_all = "camelCase")]
-    MaxNumIcebergOrders { max_num_iceberg_orders: u16 },
-    #[serde(rename = "MAX_POSITION")]
-    #[serde(rename_all = "camelCase")]
-    MaxPosition { max_position: String },
     #[serde(rename = "MARKET_LOT_SIZE")]
     #[serde(rename_all = "camelCase")]
     MarketLotSize {
@@ -79,6 +49,38 @@ pub enum Filters {
         max_qty: String,
         step_size: String,
     },
+    #[serde(rename = "MAX_NUM_ORDERS")]
+    #[serde(rename_all = "camelCase")]
+    MaxNumOrders { 
+        limit: Option<u16> 
+    },
+    #[serde(rename = "MAX_NUM_ALGO_ORDERS")]
+    #[serde(rename_all = "camelCase")]
+    MaxNumAlgoOrders { 
+        limit: Option<u16> 
+    },
+    #[serde(rename = "MIN_NOTIONAL")]
+    #[serde(rename_all = "camelCase")]
+    MinNotional {
+        notional: Option<String>,
+    },
+    #[serde(rename = "PERCENT_PRICE")]
+    #[serde(rename_all = "camelCase")]
+    PercentPrice {
+        multiplier_up: String,
+        multiplier_down: String,
+        multiplier_decimal: String,
+    },
+    // #[serde(rename = "ICEBERG_PARTS")]
+    // #[serde(rename_all = "camelCase")]
+    // IcebergParts { limit: Option<u16> },
+    // #[serde(rename = "MAX_NUM_ICEBERG_ORDERS")]
+    // #[serde(rename_all = "camelCase")]
+    // MaxNumIcebergOrders { max_num_iceberg_orders: u16 },
+    // #[serde(rename = "MAX_POSITION")]
+    // #[serde(rename_all = "camelCase")]
+    // MaxPosition { max_position: String },
+
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -173,12 +175,13 @@ pub struct BookTicker {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExchangeInformation {
-    pub exchange_filters: Vec<String>,
-    pub rate_limits: Vec<RateLimit>,
+    pub timezone: String,
     pub server_time: u64,
+    pub futures_type: String,
+    pub rate_limits: Vec<RateLimit>,
+    pub exchange_filters: Vec<String>,
     pub assets: Vec<Assets>,
     pub symbols: Vec<Symbol>,
-    pub timezone: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -196,13 +199,14 @@ pub struct Symbol {
     pub required_margin_percent: f64,
     pub base_asset: String,
     pub quote_asset: String,
-    pub price_precision: u64,
-    pub quantity_precision: u16,
-    pub base_asset_precision: u64,
-    pub quote_precision: u64,
+    pub margin_asset: String,
+    pub price_precision: u32,
+    pub quantity_precision: u32,
+    pub base_asset_precision: u32,
+    pub quote_precision: u32,
     pub underlying_type: String,
     pub underlying_sub_type: Vec<String>,
-    pub settle_plan: u16,
+    pub settle_plan: u64,
     #[serde(with = "string_or_float")]
     pub trigger_protect: f64,
     pub filters: Vec<Filters>,
@@ -543,16 +547,16 @@ pub struct PairAndWindowQuery {
 /// How long will an order stay alive
 #[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone)]
 pub enum TimeInForce {
-    /// Good Till Canceled
+    /// Good Till Cancel
     GTC,
     /// Immediate Or Cancel
     IOC,
     /// Fill or Kill
     FOK,
-    /// Good till expired
+    /// Good Till Crossing (Post Only)
     GTX,
-    #[serde(other)]
-    Other,
+    /// Good Till Date
+    GTD
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -608,13 +612,11 @@ impl Default for OrderSide {
 pub enum OrderType {
     Limit,
     Market,
-    StopLoss,
-    StopLossLimit,
+    Stop,
+    StopMarket,
     TakeProfit,
-    TakeProfitLimit,
-    LimitMaker,
-    #[serde(other)]
-    Other,
+    TakeProfitMarket,
+    TrailingStopMarket,
 }
 
 /// By default, use market orders
@@ -631,8 +633,8 @@ pub struct Empty {}
 #[serde(rename_all = "camelCase")]
 pub struct Assets {
     pub asset: String,
-    pub margin_available: String,
-    pub auto_asset_exchange: Option<u16>,
+    pub margin_available: bool,
+    pub auto_asset_exchange: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
