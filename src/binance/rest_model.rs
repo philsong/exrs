@@ -130,13 +130,18 @@ pub struct AccountInformation {
     pub taker_commission: f32,
     pub buyer_commission: f32,
     pub seller_commission: f32,
+    pub commission_rates: CommissionRates,
     pub can_trade: bool,
     pub can_withdraw: bool,
     pub can_deposit: bool,
+    pub brokered: bool,
+    pub require_self_trade_prevention: bool,
+    pub prevent_sor: bool,
+    pub update_time: i64,
     pub account_type: AccountType,
     pub balances: Vec<Balance>,
     pub permissions: Vec<AccountType>,
-    pub update_time: i64,
+    pub uid: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -157,6 +162,15 @@ pub enum AccountType {
     Leveraged,
     #[serde(other)]
     Other,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CommissionRates {
+    pub maker: String,
+    pub taker: String,
+    pub buyer: String,
+    pub seller: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -435,12 +449,10 @@ pub struct Loan {
 pub enum TimeInForce {
     /// Good Till Canceled
     GTC,
-    /// Immediate Or Cancel
+    /// Immediate Or Cancel 无法立即成交的部分就撤销, 订单在失效前会尽量多的成交。
     IOC,
-    /// Fill or Kill
+    /// Fill or Kill 无法全部立即成交就撤销, 如果无法全部成交，订单会失效。
     FOK,
-    /// Good till expired
-    GTX,
     #[serde(other)]
     Other,
 }
@@ -1402,36 +1414,36 @@ pub(crate) mod string_or_float_opt {
     }
 }
 
-pub(crate) mod string_or_bool {
-    use std::fmt;
+// pub(crate) mod string_or_bool {
+//     use std::fmt;
 
-    use serde::{de, Deserialize, Deserializer, Serializer};
+//     use serde::{de, Deserialize, Deserializer, Serializer};
 
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: fmt::Display,
-        S: Serializer,
-    {
-        serializer.collect_str(value)
-    }
+//     pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         T: fmt::Display,
+//         S: Serializer,
+//     {
+//         serializer.collect_str(value)
+//     }
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<bool, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum StringOrFloat {
-            String(String),
-            Bool(bool),
-        }
+//     pub fn deserialize<'de, D>(deserializer: D) -> Result<bool, D::Error>
+//     where
+//         D: Deserializer<'de>,
+//     {
+//         #[derive(Deserialize)]
+//         #[serde(untagged)]
+//         enum StringOrFloat {
+//             String(String),
+//             Bool(bool),
+//         }
 
-        match StringOrFloat::deserialize(deserializer)? {
-            StringOrFloat::String(s) => s.parse().map_err(de::Error::custom),
-            StringOrFloat::Bool(i) => Ok(i),
-        }
-    }
-}
+//         match StringOrFloat::deserialize(deserializer)? {
+//             StringOrFloat::String(s) => s.parse().map_err(de::Error::custom),
+//             StringOrFloat::Bool(i) => Ok(i),
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod test {

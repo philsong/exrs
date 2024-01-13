@@ -15,10 +15,19 @@ impl Config {
     /// ```
     pub fn default() -> Config {
         Config {
-            futures_rest_api_endpoint: "https://fapi-mm.binance.com".into(),
-            futures_ws_endpoint: "wss://fstream-mm.binance.com".into(),
             // futures_rest_api_endpoint: "https://fapi.binance.com".into(),
             // futures_ws_endpoint: "wss://fstream.binance.com".into(),
+            futures_rest_api_endpoint: "https://fapi-mm.binance.com".into(),
+            futures_ws_endpoint: "wss://fstream-mm.binance.com".into(),
+            
+            recv_window: 5000,
+        }
+    }
+
+    pub fn colo() -> Config {
+        Config {
+            futures_rest_api_endpoint: "https://fapi-mm.binance.com".into(),
+            futures_ws_endpoint: "wss://fstream-mm.binance.com".into(),
 
             recv_window: 5000,
         }

@@ -56,4 +56,26 @@ impl General {
 
         Ok(info)
     }
+
+
+    // Get Symbol information
+    pub async fn get_symbol_info<S>(&self, symbol: S) -> Result<Symbol>
+    where
+        S: Into<String>,
+    {
+        let symbol_string = symbol.into();
+        let upper_symbol = symbol_string.to_uppercase();
+
+        match self.exchange_info().await {
+            Ok(info) => {
+                for item in info.symbols {
+                    if item.symbol == upper_symbol {
+                        return Ok(item);
+                    }
+                }
+                Err(Error::UnknownSymbol(symbol_string.clone()))
+            }
+            Err(e) => Err(e),
+        }
+    }
 }

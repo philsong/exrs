@@ -100,9 +100,9 @@ pub struct OrdersQuery {
 }
 
 /// todo: BatchOrder
-struct BatchOrdersRequest {
-    pub batch_orders: Vec<OrderRequest>,
-}
+// struct BatchOrdersRequest {
+//     pub batch_orders: Vec<OrderRequest>,
+// }
 
 impl Account {
     /// General account information
@@ -310,6 +310,81 @@ impl Account {
         let transaction: Transaction = from_str(data.as_str())?;
 
         Ok(transaction)
+    }
+
+    pub async fn limit_buy(
+        &self,
+        new_client_order_id: impl Into<String>,
+        symbol: impl Into<String>,
+        qty: impl Into<f64>,
+        price: impl Into<f64>,
+        time_in_force: TimeInForce,
+        order_type: OrderType,
+    ) -> Result<Transaction> {
+        let order = OrderRequest {
+            new_client_order_id: Some(new_client_order_id.into()),
+            symbol: symbol.into(),
+            side: OrderSide::Buy,
+            order_type: order_type,
+            quantity: Some(qty.into()),
+            price: Some(price.into()),
+            time_in_force: Some(time_in_force),
+            ..OrderRequest::default()
+        };
+        self.place_order(order).await
+    }
+
+    pub async fn limit_sell(
+        &self,
+        new_client_order_id: impl Into<String>,
+        symbol: impl Into<String>,
+        qty: impl Into<f64>,
+        price: impl Into<f64>,
+        time_in_force: TimeInForce,
+        order_type: OrderType,
+    ) -> Result<Transaction> {
+        let order = OrderRequest {
+            new_client_order_id: Some(new_client_order_id.into()),
+            symbol: symbol.into(),
+            side: OrderSide::Sell,
+            order_type: order_type,
+            quantity: Some(qty.into()),
+            price: Some(price.into()),
+            time_in_force: Some(time_in_force),
+            ..OrderRequest::default()
+        };
+        self.place_order(order).await
+    }
+
+
+    pub async fn market_buy(
+        &self,
+        symbol: impl Into<String>,
+        qty: impl Into<f64>,
+    ) -> Result<Transaction> {
+        let order = OrderRequest {
+            symbol: symbol.into(),
+            side: OrderSide::Buy,
+            order_type: OrderType::Market,
+            quantity: Some(qty.into()),
+            ..OrderRequest::default()
+        };
+        self.place_order(order).await
+    }
+
+    pub async fn market_sell(
+        &self,
+        symbol: impl Into<String>,
+        qty: impl Into<f64>,
+    ) -> Result<Transaction> {
+        let order = OrderRequest {
+            symbol: symbol.into(),
+            side: OrderSide::Sell,
+            order_type: OrderType::Market,
+            quantity: Some(qty.into()),
+            ..OrderRequest::default()
+        };
+        self.place_order(order).await
     }
 
     /// Place a test order

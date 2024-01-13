@@ -90,7 +90,7 @@ where
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct OrderRequest {
-    pub new_client_order_id: String,
+    pub new_client_order_id: Option<String>,
     pub symbol: String,
     pub side: OrderSide,
     pub position_side: Option<PositionSide>,
@@ -121,8 +121,7 @@ pub struct OrderCancellation {
     pub order_id: Option<u64>,
     pub orig_client_order_id: Option<String>,
     /// Cannot be greater than 60000
-    pub recv_window: Option<u64>,
-    pub timestamp: Option<u64>,
+    pub recv_window: Option<u64>
 }
 
 #[derive(Serialize)]
@@ -154,7 +153,7 @@ impl FuturesAccount {
         time_in_force: TimeInForce,
     ) -> Result<Transaction> {
         let order = OrderRequest {
-            new_client_order_id: new_client_order_id.into(),
+            new_client_order_id: Some(new_client_order_id.into()),
             symbol: symbol.into(),
             side: OrderSide::Buy,
             position_side: Some(position_side),
@@ -183,7 +182,7 @@ impl FuturesAccount {
         time_in_force: TimeInForce,
     ) -> Result<Transaction> {
         let order = OrderRequest {
-            new_client_order_id: new_client_order_id.into(),
+            new_client_order_id: Some(new_client_order_id.into()),
             symbol: symbol.into(),
             side: OrderSide::Sell,
             position_side: Some(position_side),
@@ -209,7 +208,7 @@ impl FuturesAccount {
         F: Into<f64>,
     {
         let order = OrderRequest {
-            new_client_order_id: "".to_string(),
+            new_client_order_id: None,
             symbol: symbol.into(),
             side: OrderSide::Buy,
             position_side: None,
@@ -235,7 +234,7 @@ impl FuturesAccount {
         F: Into<f64>,
     {
         let order: OrderRequest = OrderRequest {
-            new_client_order_id: "".to_string(),
+            new_client_order_id: None,
             symbol: symbol.into(),
             side: OrderSide::Sell,
             position_side: None,
