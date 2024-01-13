@@ -13,8 +13,8 @@ pub struct ExchangeInformation {
     pub timezone: String,
     pub server_time: u64,
     pub rate_limits: Vec<RateLimit>,
-    pub symbols: Vec<Symbol>,
     pub exchange_filters: Vec<Filters>,
+    pub symbols: Vec<Symbol>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -58,17 +58,7 @@ pub enum Filters {
         min_price: f64,
         #[serde(with = "string_or_float")]
         max_price: f64,
-        #[serde(with = "string_or_float")]
-        tick_size: f64,
-    },
-    #[serde(rename = "PERCENT_PRICE")]
-    #[serde(rename_all = "camelCase")]
-    PercentPrice {
-        #[serde(with = "string_or_float")]
-        multiplier_up: f64,
-        #[serde(with = "string_or_float")]
-        multiplier_down: f64,
-        avg_price_mins: u64,
+        tick_size: String,
     },
     #[serde(rename = "LOT_SIZE")]
     #[serde(rename_all = "camelCase")]
@@ -77,20 +67,8 @@ pub enum Filters {
         min_qty: f64,
         #[serde(with = "string_or_float")]
         max_qty: f64,
-        #[serde(with = "string_or_float")]
-        step_size: f64,
+        step_size: String,
     },
-    #[serde(rename = "MIN_NOTIONAL")]
-    #[serde(rename_all = "camelCase")]
-    MinNotional {
-        #[serde(with = "string_or_float")]
-        min_notional: f64,
-        apply_to_market: bool,
-        avg_price_mins: u64,
-    },
-    #[serde(rename = "ICEBERG_PARTS")]
-    #[serde(rename_all = "camelCase")]
-    IcebergParts { limit: u16 },
     #[serde(rename = "MARKET_LOT_SIZE")]
     #[serde(rename_all = "camelCase")]
     MarketLotSize {
@@ -98,6 +76,33 @@ pub enum Filters {
         max_qty: String,
         step_size: String,
     },
+    #[serde(rename = "NOTIONAL")]
+    #[serde(rename_all = "camelCase")]
+    Notional {
+        #[serde(with = "string_or_float")]
+        min_notional: f64,
+        apply_min_to_market: bool,
+        #[serde(with = "string_or_float")]
+        max_notional: f64,
+        apply_max_to_market: bool,
+        avg_price_mins: u64,
+    },
+    #[serde(rename = "PERCENT_PRICE_BY_SIDE")]
+    #[serde(rename_all = "camelCase")]
+    PercentPriceBySide {
+        #[serde(with = "string_or_float")]
+        bid_multiplier_up: f64,
+        #[serde(with = "string_or_float")]
+        bid_multiplier_down: f64,
+        #[serde(with = "string_or_float")]
+        ask_multiplier_up: f64,
+        #[serde(with = "string_or_float")]
+        ask_multiplier_down: f64,
+        avg_price_mins: u64,
+    },
+    #[serde(rename = "ICEBERG_PARTS")]
+    #[serde(rename_all = "camelCase")]
+    IcebergParts { limit: u16 },
     #[serde(rename = "MAX_NUM_ORDERS")]
     #[serde(rename_all = "camelCase")]
     MaxNumOrders { max_num_orders: u16 },
@@ -179,6 +184,12 @@ pub struct Balance {
     pub asset: String,
     pub free: String,
     pub locked: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CancelAllOpenOrdersResponse {
+    code: i16,
+    msg: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -1181,13 +1192,13 @@ pub enum SymbolPermission {
 }
 
 /// Status of an order, this can typically change over time
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Eq, PartialEq, Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum OrderStatus {
     /// The order has been accepted by the engine.
     New,
     /// A part of the order has been filled.
-    PartialyFilled,
+    PartiallyFilled,
     /// The order has been completely filled.
     Filled,
     /// The order has been canceled by the user.
@@ -1276,8 +1287,8 @@ pub enum RateLimitInterval {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RateLimit {
-    pub interval: RateLimitInterval,
     pub rate_limit_type: RateLimitType,
+    pub interval: RateLimitInterval,
     pub interval_num: i32,
     pub limit: i32,
 }

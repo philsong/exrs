@@ -220,7 +220,7 @@ impl Account {
     /// let canceled_orders = tokio_test::block_on(account.cancel_all_open_orders());
     /// assert!(canceled_orders.is_ok(), "{:?}", canceled_orders);
     /// ```
-    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<Vec<Order>>
+    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<Vec<OrderCanceled>> 
     where
         S: Into<String>,
     {
@@ -231,8 +231,13 @@ impl Account {
             .client
             .delete_signed(API_V3_OPEN_ORDERS, &request)
             .await?;
-        let order: Vec<Order> = from_str(data.as_str())?;
+
+        let order: Vec<OrderCanceled> = from_str(data.as_str())?;
         Ok(order)
+
+        // println!("{}", data.as_str());
+        // let cancel_all_open_orders_response: CancelAllOpenOrdersResponse = from_str(data.as_str())?;
+        // Ok(cancel_all_open_orders_response)
     }
 
     /// Check an order's status
