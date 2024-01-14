@@ -323,7 +323,7 @@ impl Account {
         symbol: impl Into<String>,
         qty: impl Into<f64>,
         price: impl Into<f64>,
-        time_in_force: TimeInForce,
+        time_in_force: Option<TimeInForce>,
         order_type: OrderType,
     ) -> Result<Transaction> {
         let order = OrderRequest {
@@ -333,7 +333,7 @@ impl Account {
             order_type: order_type,
             quantity: Some(qty.into()),
             price: Some(price.into()),
-            time_in_force: Some(time_in_force),
+            time_in_force: time_in_force,
             ..OrderRequest::default()
         };
         self.place_order(order).await
@@ -345,7 +345,7 @@ impl Account {
         symbol: impl Into<String>,
         qty: impl Into<f64>,
         price: impl Into<f64>,
-        time_in_force: TimeInForce,
+        time_in_force: Option<TimeInForce>,
         order_type: OrderType,
     ) -> Result<Transaction> {
         let order = OrderRequest {
@@ -355,7 +355,7 @@ impl Account {
             order_type: order_type,
             quantity: Some(qty.into()),
             price: Some(price.into()),
-            time_in_force: Some(time_in_force),
+            time_in_force: time_in_force,
             ..OrderRequest::default()
         };
         self.place_order(order).await
