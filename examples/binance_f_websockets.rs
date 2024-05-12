@@ -55,7 +55,6 @@ async fn user_stream_websocket() {
             loop {
                 let msg = rx.recv().await.unwrap();
                 println!("msg - {:?}", msg);
-                actix_rt::task::yield_now().await;
             }
         });
 
@@ -96,7 +95,6 @@ async fn market_websocket() {
                 }
                 _ => (),
             };
-            actix_rt::task::yield_now().await;
         }
     });
 
@@ -129,8 +127,6 @@ async fn bookticker_websocket() {
                 len += 1;
                 println!("mean: {}", count as f64 / len as f64)
             }
-
-            actix_rt::task::yield_now().await;
         }
     });
 

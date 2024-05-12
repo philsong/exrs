@@ -220,7 +220,7 @@ impl Account {
     /// let canceled_orders = tokio_test::block_on(account.cancel_all_open_orders());
     /// assert!(canceled_orders.is_ok(), "{:?}", canceled_orders);
     /// ```
-    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<Vec<OrderCanceled>> 
+    pub async fn cancel_all_open_orders<S>(&self, symbol: S) -> Result<Vec<OrderCanceled>>
     where
         S: Into<String>,
     {
@@ -360,7 +360,6 @@ impl Account {
         };
         self.place_order(order).await
     }
-
 
     pub async fn market_buy(
         &self,

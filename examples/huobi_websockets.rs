@@ -26,7 +26,6 @@ async fn bbo_websocket() {
         loop {
             let msg = rx.recv().await.unwrap();
             println!("{:?}", msg);
-            actix_rt::task::yield_now().await;
         }
     });
 

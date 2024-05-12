@@ -2,7 +2,8 @@ use super::config::*;
 use super::errors::*;
 
 use awc::ws::Message;
-use log::debug;
+// use log::debug;
+// use log::info;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use actix_codec::Framed;
@@ -140,14 +141,18 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> FuturesWebSockets<WE> {
                 match message {
                     Some(message) => {
                         let message = message?;
-                        debug!("event_loop message - {:?}", message);
+                        // let local_timestamp = std::time::SystemTime::now()
+                        //     .duration_since(std::time::UNIX_EPOCH)
+                        //     .expect("Time went backwards")
+                        //     .as_millis() as u64;
+
+                        // info!("event_loop message - {} {:?}", local_timestamp, message);
                         match message {
                             Frame::Text(msg) => {
                                 if msg.is_empty() {
                                     return Ok(());
                                 }
                                 let event: WE = from_slice(&msg)?;
-
                                 if let Err(e) = self.sender.send(event).await {
                                     return Err(Error::Msg(format!("{:?}", e)));
                                 }
@@ -166,7 +171,6 @@ impl<WE: serde::de::DeserializeOwned + std::fmt::Debug> FuturesWebSockets<WE> {
                         return Err(Error::Msg(format!("Option::unwrap()` on a `None` value.")))
                     }
                 }
-                let _ = actix_rt::task::yield_now().await;
             }
         }
         Ok(())

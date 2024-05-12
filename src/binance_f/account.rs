@@ -121,7 +121,7 @@ pub struct OrderCancellation {
     pub order_id: Option<u64>,
     pub orig_client_order_id: Option<String>,
     /// Cannot be greater than 60000
-    pub recv_window: Option<u64>
+    pub recv_window: Option<u64>,
 }
 
 #[derive(Serialize)]
@@ -291,7 +291,6 @@ impl FuturesAccount {
             )
             .await
     }
-
 
     pub async fn position_information<S>(&self, symbol: S) -> Result<Vec<Position>>
     where

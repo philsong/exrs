@@ -20,8 +20,6 @@ async fn ticker_websocket() {
         loop {
             let msg = rx.recv().await.unwrap();
             println!("msg: {:?}", msg);
-
-            actix_rt::task::yield_now().await;
         }
     });
 

@@ -51,19 +51,13 @@ pub enum Filters {
     },
     #[serde(rename = "MAX_NUM_ORDERS")]
     #[serde(rename_all = "camelCase")]
-    MaxNumOrders { 
-        limit: Option<u16> 
-    },
+    MaxNumOrders { limit: Option<u16> },
     #[serde(rename = "MAX_NUM_ALGO_ORDERS")]
     #[serde(rename_all = "camelCase")]
-    MaxNumAlgoOrders { 
-        limit: Option<u16> 
-    },
+    MaxNumAlgoOrders { limit: Option<u16> },
     #[serde(rename = "MIN_NOTIONAL")]
     #[serde(rename_all = "camelCase")]
-    MinNotional {
-        notional: Option<String>,
-    },
+    MinNotional { notional: Option<String> },
     #[serde(rename = "PERCENT_PRICE")]
     #[serde(rename_all = "camelCase")]
     PercentPrice {
@@ -80,7 +74,6 @@ pub enum Filters {
     // #[serde(rename = "MAX_POSITION")]
     // #[serde(rename_all = "camelCase")]
     // MaxPosition { max_position: String },
-
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -556,7 +549,7 @@ pub enum TimeInForce {
     /// Good Till Crossing (Post Only)
     GTX,
     /// Good Till Date
-    GTD
+    GTD,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
