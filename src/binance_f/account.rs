@@ -46,7 +46,7 @@ impl Default for ContractType {
     }
 }
 
-#[derive(Deserialize, Serialize, Copy, Clone, PartialEq)]
+#[derive(Debug, Hash, Eq, PartialEq, Deserialize, Serialize, Copy, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PositionSide {
     Both,
